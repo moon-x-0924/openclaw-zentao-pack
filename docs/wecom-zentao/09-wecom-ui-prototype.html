@@ -1,0 +1,3997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>企微禅道助手 UI 原型</title>
+  <style>
+    :root {
+      --bg: #eef3f8;
+      --panel: #f7fafc;
+      --surface: #ffffff;
+      --surface-soft: #f8fbff;
+      --line: #dbe4ee;
+      --line-strong: #c7d3e0;
+      --text: #17212b;
+      --muted: #607083;
+      --blue: #2f6bff;
+      --blue-soft: #eaf1ff;
+      --green: #1e9b63;
+      --green-soft: #e8f8f0;
+      --orange: #e47c24;
+      --orange-soft: #fff3e7;
+      --red: #d14343;
+      --red-soft: #fdeeee;
+      --shadow: 0 24px 60px rgba(34, 52, 84, 0.14);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --font: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(47, 107, 255, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(30, 155, 99, 0.14), transparent 20%),
+        linear-gradient(180deg, #f6f9fc 0%, #eaf0f6 100%);
+      min-height: 100vh;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .page {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 36px 24px 48px;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .mode-switch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+      margin-bottom: 12px;
+    }
+
+    .mode-btn {
+      border: 1px solid rgba(199, 211, 224, 0.92);
+      background: rgba(255, 255, 255, 0.84);
+      color: #3b546d;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .mode-btn.active {
+      background: linear-gradient(180deg, #17212b 0%, #243242 100%);
+      color: #fff;
+      border-color: rgba(23, 33, 43, 0.6);
+      box-shadow: 0 12px 20px rgba(23, 33, 43, 0.16);
+    }
+
+    .scene-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .scene-tab {
+      border: 1px solid rgba(199, 211, 224, 0.92);
+      background: rgba(255, 255, 255, 0.86);
+      color: #38516a;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .scene-tab.active {
+      background: linear-gradient(180deg, #2f6bff 0%, #245cf4 100%);
+      color: #fff;
+      border-color: rgba(47, 107, 255, 0.5);
+      box-shadow: 0 12px 22px rgba(47, 107, 255, 0.18);
+    }
+
+    .mode-panel {
+      display: none;
+    }
+
+    .mode-panel.active {
+      display: block;
+    }
+
+    .subscene-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .subscene-tab {
+      display: none;
+      border: 1px solid rgba(199, 211, 224, 0.92);
+      background: rgba(255, 255, 255, 0.78);
+      color: #46617b;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .subscene-tab.visible {
+      display: inline-flex;
+    }
+
+    .subscene-tab.active {
+      background: #eaf1ff;
+      color: #2358d8;
+      border-color: rgba(47, 107, 255, 0.16);
+    }
+
+    .badge {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(199, 211, 224, 0.9);
+      font-size: 12px;
+      color: #35506a;
+      backdrop-filter: blur(10px);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 420px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .phone-shell,
+    .spec-panel {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(219, 228, 238, 0.9);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .phone-shell {
+      border-radius: 36px;
+      padding: 16px;
+    }
+
+    .phone {
+      background: var(--panel);
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      min-height: 860px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-body::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .chat-body::-webkit-scrollbar-thumb {
+      background: rgba(129, 150, 173, 0.45);
+      border-radius: 999px;
+    }
+
+    .chat-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .phone-top {
+      background: linear-gradient(180deg, #fbfdff 0%, #f2f6fb 100%);
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 20px;
+      z-index: 2;
+      backdrop-filter: blur(10px);
+    }
+
+    .scene-pill {
+      margin-top: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(47, 107, 255, 0.08);
+      border: 1px solid rgba(47, 107, 255, 0.12);
+      color: #3760b4;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .statusbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #415468;
+      margin-bottom: 10px;
+    }
+
+    .chat-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .chat-title h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .chat-title span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chat-body {
+      padding: 18px 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      background:
+        radial-gradient(circle at top, rgba(47, 107, 255, 0.08), transparent 30%),
+        linear-gradient(180deg, #f7fafc 0%, #eef4f9 100%);
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      max-width: 100%;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #5f88ff, #2f6bff);
+      box-shadow: 0 10px 20px rgba(47, 107, 255, 0.2);
+      flex: 0 0 auto;
+    }
+
+    .message.user .avatar {
+      order: 2;
+      background: linear-gradient(135deg, #40bf86, #1e9b63);
+      box-shadow: 0 10px 20px rgba(30, 155, 99, 0.2);
+    }
+
+    .bubble {
+      max-width: 308px;
+      border-radius: 18px;
+      padding: 12px 14px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+      border: 1px solid rgba(219, 228, 238, 0.95);
+      box-shadow: 0 10px 24px rgba(27, 43, 70, 0.06);
+    }
+
+    .message.user .bubble {
+      background: linear-gradient(180deg, #2f6bff 0%, #245cf4 100%);
+      color: #fff;
+      border-color: rgba(47, 107, 255, 0.6);
+      border-bottom-right-radius: 6px;
+    }
+
+    .message.bot .bubble {
+      background: rgba(255, 255, 255, 0.95);
+      border-bottom-left-radius: 6px;
+    }
+
+    .timestamp {
+      text-align: center;
+      font-size: 11px;
+      color: #7b8ea4;
+      margin: 4px 0 2px;
+    }
+
+    .quick-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--blue-soft);
+      color: #2f5dbd;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid rgba(47, 107, 255, 0.12);
+    }
+
+    .card {
+      width: 308px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(219, 228, 238, 0.95);
+      box-shadow: 0 20px 30px rgba(43, 61, 93, 0.08);
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 16px 16px 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    .card-subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .tag {
+      white-space: nowrap;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .tag.blue {
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
+    .tag.green {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .tag.orange {
+      background: var(--orange-soft);
+      color: var(--orange);
+    }
+
+    .tag.red {
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .card-body {
+      padding: 0 16px 14px;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .stat-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f5f8fc;
+      color: #44607b;
+      font-size: 11px;
+      border: 1px solid #e5edf5;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .list-item {
+      border: 1px solid #e8eef5;
+      background: linear-gradient(180deg, #fbfdff 0%, #f6f9fc 100%);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .list-item.overdue {
+      border-color: #f7c8c8;
+      background: linear-gradient(180deg, #fff8f8 0%, #fffdfd 100%);
+    }
+
+    .item-top,
+    .item-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .item-top {
+      margin-bottom: 6px;
+    }
+
+    .item-title {
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .item-meta {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 0 16px 16px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      height: 38px;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: default;
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, #2f6bff 0%, #245cf4 100%);
+      color: #fff;
+      box-shadow: 0 10px 18px rgba(47, 107, 255, 0.22);
+    }
+
+    .btn-secondary {
+      background: #eef4fb;
+      color: #2f5dbd;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: #6f8194;
+      border: 1px dashed #c7d3e0;
+    }
+
+    .confirm-card {
+      border-color: #f5c08c;
+      background: linear-gradient(180deg, #fffdfa 0%, #fff7ee 100%);
+    }
+
+    .confirm-panel {
+      border-radius: 18px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid #fde2c7;
+      display: grid;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .kv {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+    }
+
+    .kv strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .alert {
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.6;
+      background: var(--orange-soft);
+      color: #995210;
+      border: 1px solid #f9cf9e;
+    }
+
+    .candidate-card .candidate-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eef3f7;
+    }
+
+    .candidate-card .candidate-item:last-child {
+      border-bottom: 0;
+    }
+
+    .candidate-index {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .error-card {
+      border-color: #f2c4c4;
+      background: linear-gradient(180deg, #fffdfd 0%, #fff7f7 100%);
+    }
+
+    .error-box {
+      padding: 12px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid #f3d6d6;
+      color: #7b3b3b;
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .composer {
+      padding: 12px 14px 16px;
+      border-top: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .scene-view {
+      display: none;
+    }
+
+    .scene-view.active {
+      display: block;
+    }
+
+    .phone-scene {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      height: 100%;
+    }
+
+    .phone-scene.active {
+      display: flex;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .mini-stat {
+      border-radius: 16px;
+      border: 1px solid #e6edf6;
+      background: #fff;
+      padding: 12px;
+    }
+
+    .mini-stat .metric-label {
+      margin-bottom: 6px;
+    }
+
+    .mini-stat .metric-value {
+      font-size: 20px;
+    }
+
+    .summary-board {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-radius: 14px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid #e7eef6;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .summary-row strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .status-stack {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .status-item {
+      border-radius: 16px;
+      border: 1px solid #e6edf6;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .status-item.warn {
+      border-color: #f9cf9e;
+      background: #fffaf4;
+    }
+
+    .status-item.good {
+      border-color: #bfe8d3;
+      background: #f6fffa;
+    }
+
+    .split-note {
+      display: grid;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .lane-board {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .lane-row {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .lane-role {
+      border-radius: 16px;
+      background: linear-gradient(180deg, #17212b 0%, #243242 100%);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+      padding: 10px;
+      letter-spacing: 0.02em;
+    }
+
+    .lane-track {
+      border-radius: 18px;
+      border: 1px solid #e6edf6;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+      overflow: auto;
+    }
+
+    .lane-track::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .lane-track::-webkit-scrollbar-thumb {
+      background: rgba(129, 150, 173, 0.45);
+      border-radius: 999px;
+    }
+
+    .handoff-node {
+      min-width: 180px;
+      border-radius: 16px;
+      border: 1px solid #e5edf6;
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .handoff-node::after {
+      content: "→";
+      position: absolute;
+      right: -18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ab0c7;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .handoff-node:last-child::after {
+      content: "";
+    }
+
+    .handoff-node strong {
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .handoff-node span {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .step-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef4fb;
+      color: #48617b;
+      border: 1px solid #dbe6f1;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .handoff-node.input {
+      border-color: #cfe0ff;
+      background: #f5f9ff;
+    }
+
+    .handoff-node.output {
+      border-color: #cdeedc;
+      background: #f6fffa;
+    }
+
+    .handoff-node.gate {
+      border-color: #f7d5aa;
+      background: #fff8ef;
+    }
+
+    .lane-meta {
+      margin-top: 12px;
+      border-radius: 18px;
+      border: 1px solid #e5edf6;
+      background: rgba(255, 255, 255, 0.88);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .lane-meta h6 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .lane-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .lane-meta-card {
+      border-radius: 14px;
+      border: 1px solid #e6edf6;
+      background: #fff;
+      padding: 12px;
+    }
+
+    .lane-meta-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .lane-meta-card span {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .composer-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px 8px 14px;
+      border: 1px solid var(--line-strong);
+      border-radius: 18px;
+      background: #fdfefe;
+    }
+
+    .composer-input {
+      flex: 1;
+      color: #7b8ea4;
+      font-size: 14px;
+    }
+
+    .send {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #2f6bff 0%, #245cf4 100%);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      box-shadow: 0 10px 16px rgba(47, 107, 255, 0.22);
+    }
+
+    .spec-panel {
+      border-radius: 32px;
+      padding: 24px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .panel-title h3 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .panel-title p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 760px;
+    }
+
+    .role-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #eef4ff 0%, #f7faff 100%);
+      border: 1px solid #dbe6fb;
+      width: fit-content;
+      color: #33527a;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .role-indicator.active {
+      display: inline-flex;
+    }
+
+    .role-indicator .dot {
+      width: 8px;
+      height: 8px;
+      background: #2f6bff;
+    }
+
+    .role-indicator.role-product {
+      background: linear-gradient(180deg, #eef4ff 0%, #f7faff 100%);
+      border-color: #dbe6fb;
+      color: #31537e;
+    }
+
+    .role-indicator.role-product .dot {
+      background: #2f6bff;
+    }
+
+    .role-indicator.role-developer {
+      background: linear-gradient(180deg, #ecfbf6 0%, #f5fffb 100%);
+      border-color: #cfeee1;
+      color: #25664b;
+    }
+
+    .role-indicator.role-developer .dot {
+      background: #1e9b63;
+    }
+
+    .role-indicator.role-tester {
+      background: linear-gradient(180deg, #fff4e8 0%, #fffaf4 100%);
+      border-color: #f3d4b3;
+      color: #93571d;
+    }
+
+    .role-indicator.role-tester .dot {
+      background: #e47c24;
+    }
+
+    .role-indicator.role-manager {
+      background: linear-gradient(180deg, #eef8f2 0%, #f8fcfa 100%);
+      border-color: #d6eadb;
+      color: #355c41;
+    }
+
+    .role-indicator.role-manager .dot {
+      background: #3f8f5a;
+    }
+
+    .role-indicator.role-collaboration {
+      background: linear-gradient(180deg, #f3f0ff 0%, #faf8ff 100%);
+      border-color: #e1d9ff;
+      color: #5d4f8f;
+    }
+
+    .role-indicator.role-collaboration .dot {
+      background: #7a63d8;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #e5edf5;
+      font-size: 12px;
+      color: #53677d;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+    }
+
+    .sections {
+      display: grid;
+      gap: 18px;
+    }
+
+    .section {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #e3ebf4;
+      border-radius: 24px;
+      padding: 18px;
+    }
+
+    .section h4 {
+      margin: 0 0 14px;
+      font-size: 18px;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .spec-card {
+      background: linear-gradient(180deg, #fdfefe 0%, #f8fbff 100%);
+      border: 1px solid #e7eef6;
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .spec-card h5 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .spec-card p,
+    .spec-card li {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .spec-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .desktop-preview {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+      align-items: stretch;
+      margin-top: 10px;
+    }
+
+    .workbench,
+    .bug-form {
+      border-radius: 22px;
+      border: 1px solid #e2eaf3;
+      background: linear-gradient(180deg, #fdfefe 0%, #f7fbff 100%);
+      padding: 18px;
+      min-height: 430px;
+    }
+
+    .workbench-head,
+    .form-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .workbench h5,
+    .bug-form h5 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .desktop-preview.role-theme-product .workbench-head h5,
+    .desktop-preview.role-theme-product .form-head h5 {
+      color: #2f6bff;
+    }
+
+    .desktop-preview.role-theme-product .workbench,
+    .desktop-preview.role-theme-product .bug-form {
+      border-color: #dbe6fb;
+      box-shadow: inset 0 1px 0 rgba(47, 107, 255, 0.05);
+    }
+
+    .desktop-preview.role-theme-product .workbench-head .tag,
+    .desktop-preview.role-theme-product .form-head .tag {
+      background: #eef4ff;
+      color: #2f6bff;
+      border: 1px solid #dbe6fb;
+    }
+
+    .desktop-preview.role-theme-developer .workbench-head h5,
+    .desktop-preview.role-theme-developer .form-head h5 {
+      color: #1e9b63;
+    }
+
+    .desktop-preview.role-theme-developer .workbench,
+    .desktop-preview.role-theme-developer .bug-form {
+      border-color: #cfeee1;
+      box-shadow: inset 0 1px 0 rgba(30, 155, 99, 0.05);
+    }
+
+    .desktop-preview.role-theme-developer .workbench-head .tag,
+    .desktop-preview.role-theme-developer .form-head .tag {
+      background: #ecfbf6;
+      color: #1e9b63;
+      border: 1px solid #cfeee1;
+    }
+
+    .desktop-preview.role-theme-tester .workbench-head h5,
+    .desktop-preview.role-theme-tester .form-head h5 {
+      color: #e47c24;
+    }
+
+    .desktop-preview.role-theme-tester .workbench,
+    .desktop-preview.role-theme-tester .bug-form {
+      border-color: #f3d4b3;
+      box-shadow: inset 0 1px 0 rgba(228, 124, 36, 0.05);
+    }
+
+    .desktop-preview.role-theme-tester .workbench-head .tag,
+    .desktop-preview.role-theme-tester .form-head .tag {
+      background: #fff4e8;
+      color: #d86a14;
+      border: 1px solid #f3d4b3;
+    }
+
+    .desktop-preview.role-theme-manager .workbench-head h5,
+    .desktop-preview.role-theme-manager .form-head h5 {
+      color: #3f8f5a;
+    }
+
+    .desktop-preview.role-theme-manager .workbench,
+    .desktop-preview.role-theme-manager .bug-form {
+      border-color: #d6eadb;
+      box-shadow: inset 0 1px 0 rgba(63, 143, 90, 0.05);
+    }
+
+    .desktop-preview.role-theme-manager .workbench-head .tag,
+    .desktop-preview.role-theme-manager .form-head .tag {
+      background: #eef8f2;
+      color: #3f8f5a;
+      border: 1px solid #d6eadb;
+    }
+
+    .desktop-preview.role-theme-collaboration .workbench-head h5,
+    .desktop-preview.role-theme-collaboration .form-head h5 {
+      color: #7a63d8;
+    }
+
+    .desktop-preview.role-theme-collaboration .workbench,
+    .desktop-preview.role-theme-collaboration .bug-form {
+      border-color: #e1d9ff;
+      box-shadow: inset 0 1px 0 rgba(122, 99, 216, 0.05);
+    }
+
+    .desktop-preview.role-theme-collaboration .workbench-head .tag,
+    .desktop-preview.role-theme-collaboration .form-head .tag {
+      background: #f3f0ff;
+      color: #7a63d8;
+      border: 1px solid #e1d9ff;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      padding: 16px;
+      border-radius: 18px;
+      background: #fff;
+      border: 1px solid #e6edf6;
+    }
+
+    .desktop-preview.role-theme-product .metric {
+      border-color: #dbe6fb;
+      box-shadow: inset 0 3px 0 #2f6bff;
+    }
+
+    .desktop-preview.role-theme-product .metric-label {
+      color: #5a79a2;
+    }
+
+    .desktop-preview.role-theme-product .metric-value {
+      color: #2f6bff;
+    }
+
+    .desktop-preview.role-theme-developer .metric {
+      border-color: #cfeee1;
+      box-shadow: inset 0 3px 0 #1e9b63;
+    }
+
+    .desktop-preview.role-theme-developer .metric-label {
+      color: #4f7b67;
+    }
+
+    .desktop-preview.role-theme-developer .metric-value {
+      color: #1e9b63;
+    }
+
+    .desktop-preview.role-theme-tester .metric {
+      border-color: #f3d4b3;
+      box-shadow: inset 0 3px 0 #e47c24;
+    }
+
+    .desktop-preview.role-theme-tester .metric-label {
+      color: #96653a;
+    }
+
+    .desktop-preview.role-theme-tester .metric-value {
+      color: #d86a14;
+    }
+
+    .desktop-preview.role-theme-manager .metric {
+      border-color: #d6eadb;
+      box-shadow: inset 0 3px 0 #3f8f5a;
+    }
+
+    .desktop-preview.role-theme-manager .metric-label {
+      color: #557364;
+    }
+
+    .desktop-preview.role-theme-manager .metric-value {
+      color: #3f8f5a;
+    }
+
+    .desktop-preview.role-theme-collaboration .metric {
+      border-color: #e1d9ff;
+      box-shadow: inset 0 3px 0 #7a63d8;
+    }
+
+    .desktop-preview.role-theme-collaboration .metric-label {
+      color: #6a6291;
+    }
+
+    .desktop-preview.role-theme-collaboration .metric-value {
+      color: #7a63d8;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .action-tile {
+      border-radius: 16px;
+      padding: 14px;
+      background: linear-gradient(180deg, #2f6bff 0%, #275ef2 100%);
+      color: #fff;
+      min-height: 88px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .action-tile:nth-child(2) {
+      background: linear-gradient(180deg, #1e9b63 0%, #168b58 100%);
+    }
+
+    .action-tile:nth-child(3) {
+      background: linear-gradient(180deg, #7047ff 0%, #5f36f6 100%);
+    }
+
+    .action-tile:nth-child(4) {
+      background: linear-gradient(180deg, #e47c24 0%, #cf6b16 100%);
+    }
+
+    .desktop-preview.role-theme-product .action-tile {
+      background: linear-gradient(180deg, #4b83ff 0%, #2f6bff 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    .desktop-preview.role-theme-product .action-tile:nth-child(2) {
+      background: linear-gradient(180deg, #6d96ff 0%, #4778f7 100%);
+    }
+
+    .desktop-preview.role-theme-product .action-tile:nth-child(3) {
+      background: linear-gradient(180deg, #7fa5ff 0%, #5b86f8 100%);
+    }
+
+    .desktop-preview.role-theme-product .action-tile:nth-child(4) {
+      background: linear-gradient(180deg, #90b2ff 0%, #6d96ff 100%);
+    }
+
+    .desktop-preview.role-theme-developer .action-tile {
+      background: linear-gradient(180deg, #2fb378 0%, #1e9b63 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    .desktop-preview.role-theme-developer .action-tile:nth-child(2) {
+      background: linear-gradient(180deg, #46be87 0%, #2ca46b 100%);
+    }
+
+    .desktop-preview.role-theme-developer .action-tile:nth-child(3) {
+      background: linear-gradient(180deg, #5bc897 0%, #3aaf78 100%);
+    }
+
+    .desktop-preview.role-theme-developer .action-tile:nth-child(4) {
+      background: linear-gradient(180deg, #70d1a5 0%, #4ab784 100%);
+    }
+
+    .desktop-preview.role-theme-tester .action-tile {
+      background: linear-gradient(180deg, #f09845 0%, #e47c24 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    .desktop-preview.role-theme-tester .action-tile:nth-child(2) {
+      background: linear-gradient(180deg, #f4a860 0%, #e98e39 100%);
+    }
+
+    .desktop-preview.role-theme-tester .action-tile:nth-child(3) {
+      background: linear-gradient(180deg, #f7b777 0%, #ef9b4d 100%);
+    }
+
+    .desktop-preview.role-theme-tester .action-tile:nth-child(4) {
+      background: linear-gradient(180deg, #fac38e 0%, #f1aa61 100%);
+    }
+
+    .desktop-preview.role-theme-manager .action-tile {
+      background: linear-gradient(180deg, #58a874 0%, #3f8f5a 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    .desktop-preview.role-theme-manager .action-tile:nth-child(2) {
+      background: linear-gradient(180deg, #6db585 0%, #529b6b 100%);
+    }
+
+    .desktop-preview.role-theme-manager .action-tile:nth-child(3) {
+      background: linear-gradient(180deg, #82c095 0%, #67a87e 100%);
+    }
+
+    .desktop-preview.role-theme-manager .action-tile:nth-child(4) {
+      background: linear-gradient(180deg, #96cba6 0%, #79b48f 100%);
+    }
+
+    .desktop-preview.role-theme-collaboration .action-tile {
+      background: linear-gradient(180deg, #927df0 0%, #7a63d8 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    .desktop-preview.role-theme-collaboration .action-tile:nth-child(2) {
+      background: linear-gradient(180deg, #a18ef3 0%, #8770df 100%);
+    }
+
+    .desktop-preview.role-theme-collaboration .action-tile:nth-child(3) {
+      background: linear-gradient(180deg, #af9ef5 0%, #9580e3 100%);
+    }
+
+    .desktop-preview.role-theme-collaboration .action-tile:nth-child(4) {
+      background: linear-gradient(180deg, #bcaff7 0%, #a28fe7 100%);
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-item {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e8eef5;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #42566b;
+    }
+
+    .input,
+    .textarea,
+    .upload {
+      border-radius: 14px;
+      border: 1px solid #dbe5ef;
+      background: #fff;
+      padding: 12px 14px;
+      color: #8a9aab;
+      font-size: 13px;
+    }
+
+    .textarea {
+      min-height: 96px;
+    }
+
+    .upload {
+      border-style: dashed;
+      background: #f8fbff;
+      min-height: 72px;
+      display: grid;
+      place-items: center;
+    }
+
+    .form-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .focus-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .deliverable-board {
+      display: grid;
+      gap: 12px;
+    }
+
+    .deliverable-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid #e5edf5;
+      background: #fff;
+    }
+
+    .deliverable-row span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .deliverable-row strong {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .focus-note {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: #f7fbff;
+      border: 1px solid #dce8f5;
+      color: #56708a;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1180px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .phone-shell {
+        position: static;
+      }
+
+    }
+
+    @media (max-width: 860px) {
+      .page {
+        padding: 20px 14px 30px;
+      }
+
+      .hero {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .section-grid,
+      .desktop-preview {
+        grid-template-columns: 1fr;
+      }
+
+      .mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .lane-row,
+      .lane-meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .phone-shell {
+        padding: 10px;
+        border-radius: 24px;
+      }
+
+      .phone {
+        min-height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="hero">
+      <div>
+        <h1>企微禅道助手 UI 效果图</h1>
+        <p>这是一版用 HTML 还原的直观原型，重点模拟最终在企业微信会话里看到的消息卡片效果，以及自建应用工作台和复杂表单承接方式。它不是开发代码，而是给产品、设计、研发一起对齐“最终要做成什么样”的视觉基线。</p>
+        <div class="badge-row">
+          <div class="badge">一期 MVP：需求发起</div>
+          <div class="badge">一期 MVP：研发执行</div>
+          <div class="badge">一期 MVP：测试结果</div>
+          <div class="badge">一期 MVP：关闭确认</div>
+        </div>
+        <div class="mode-switch" id="modeSwitch">
+          <button class="mode-btn active" data-mode="stage">按阶段展示</button>
+          <button class="mode-btn" data-mode="role">按角色展示</button>
+        </div>
+
+        <div class="mode-panel active" data-mode-panel="stage">
+          <div class="scene-tabs" id="sceneTabs">
+            <button class="scene-tab active" data-scene="review">需求发起</button>
+            <button class="scene-tab" data-scene="dev">研发执行</button>
+            <button class="scene-tab" data-scene="test">测试结果</button>
+            <button class="scene-tab" data-scene="accept">关闭确认</button>
+          </div>
+        </div>
+
+        <div class="mode-panel" data-mode-panel="role">
+          <div class="scene-tabs" id="roleTabs">
+            <button class="scene-tab active" data-role="product-manager">产品</button>
+            <button class="scene-tab" data-role="developer">研发</button>
+            <button class="scene-tab" data-role="tester">测试</button>
+            <button class="scene-tab" data-role="collaboration">跨角色协作</button>
+          </div>
+          <div class="subscene-tabs" id="roleSubTabs">
+            <button class="subscene-tab visible active" data-role-target="product-manager" data-role-scene="overview">总览</button>
+            <button class="subscene-tab visible" data-role-target="product-manager" data-role-scene="demand">提需求</button>
+            <button class="subscene-tab visible" data-role-target="product-manager" data-role-scene="acceptance">确认关闭</button>
+
+            <button class="subscene-tab" data-role-target="developer" data-role-scene="task">做任务</button>
+
+            <button class="subscene-tab" data-role-target="tester" data-role-scene="execute">执行测试</button>
+
+            <button class="subscene-tab" data-role-target="collaboration" data-role-scene="overview">总览</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="phone-shell">
+        <div class="phone">
+          <div class="phone-top">
+            <div class="statusbar">
+              <span>9:41</span>
+              <span>企微 5G 86%</span>
+            </div>
+            <div class="chat-title">
+              <div>
+                <h2>禅道助手</h2>
+                <span>企业微信单聊 · 对话式操作禅道</span>
+              </div>
+              <span class="tag blue">MVP 演示</span>
+            </div>
+            <div class="scene-pill" id="scenePill">当前场景：需求创建与进入开发</div>
+          </div>
+
+          <div class="chat-body">
+            <div class="phone-scene" data-mode="stage" data-scene="setup" style="display:none;">
+              <div class="timestamp">阶段一 · 系统准备</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  先从系统准备开始。我可以帮助管理员完成用户、角色和权限检查，确保后续流程都能正常走通。
+                  <div class="quick-strip">
+                    <div class="chip">创建用户</div>
+                    <div class="chip">检查权限</div>
+                    <div class="chip">同步企微身份</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">管</div>
+                <div class="bubble">检查当前角色权限是否完整</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">权限检查结果</h3>
+                      <p class="card-subtitle">已按 SOP 校验产品、项目、需求、任务、测试、发布相关权限</p>
+                    </div>
+                    <span class="tag orange">待补齐</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                      <div class="summary-row"><span>已通过</span><strong>产品创建、项目创建、任务指派</strong></div>
+                      <div class="summary-row"><span>待补权限</span><strong>测试用例维护、发布创建</strong></div>
+                      <div class="summary-row"><span>影响角色</span><strong>测试负责人、发布负责人</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">查看缺口详情</button>
+                    <button class="btn btn-secondary">同步企微用户</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="stage" data-scene="product" style="display:none;">
+              <div class="timestamp">阶段二 · 业务归属建立</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  这一阶段要把产品线、产品和模块建立完整，后续需求、任务、用例才有正式归属。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">产</div>
+                <div class="bubble">为支付业务创建产品并初始化模块</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">产品初始化草稿</h3>
+                      <p class="card-subtitle">已识别为“创建产品并建模块”流程</p>
+                    </div>
+                    <span class="tag blue">待确认</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                      <div class="summary-row"><span>项目集</span><strong>支付业务线</strong></div>
+                      <div class="summary-row"><span>产品名称</span><strong>统一支付中台</strong></div>
+                      <div class="summary-row"><span>建议模块</span><strong>支付网关 / 对账 / 退款 / 商户中心</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">确认创建</button>
+                    <button class="btn btn-secondary">修改模块</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene active" data-mode="stage" data-scene="review">
+              <div class="timestamp">阶段三 · 需求提出与评审</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  我可以帮你把研发需求先落入产品池，再组织评审并输出评审结论。
+                  <div class="quick-strip">
+                    <div class="chip">提研发需求</div>
+                    <div class="chip">组织评审</div>
+                    <div class="chip">评审结论</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">产</div>
+                <div class="bubble">创建研发需求：退款审核增加风控拦截</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">需求创建结果</h3>
+                      <p class="card-subtitle">已生成最小需求卡，下一步由负责人确认是否进入开发</p>
+                    </div>
+                    <span class="tag green">草稿完成</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                        <div class="summary-row"><span>需求</span><strong>退款审核增加风控拦截</strong></div>
+                        <div class="summary-row"><span>产品/模块</span><strong>统一支付中台 / 退款</strong></div>
+                        <div class="summary-row"><span>负责人/优先级</span><strong>王敏 / P1</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">确认进入开发</button>
+                    <button class="btn btn-secondary">补充详情</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">产</div>
+                <div class="bubble">让负责人确认这条需求进入开发</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">进入开发确认</h3>
+                      <p class="card-subtitle">第一版先用负责人确认代替正式评审流程</p>
+                    </div>
+                    <span class="tag green">已确认</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="status-stack">
+                      <div class="status-item good">
+                        <div class="item-top"><div class="item-title">下一步</div><span class="tag green">进入开发</span></div>
+                        <div class="item-meta"><span>已指派研发负责人，默认挂到当前执行继续推进</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">查看任务</button>
+                    <button class="btn btn-secondary">查看需求详情</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="stage" data-scene="project" style="display:none;">
+              <div class="timestamp">阶段四 · 项目与迭代准备</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  现在进入项目准备阶段：先建项目、再加团队、再建执行并关联需求。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">项</div>
+                <div class="bubble">为支付业务创建项目并准备迭代 4</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">项目与执行准备清单</h3>
+                      <p class="card-subtitle">按 SOP 检查项目、团队、执行和需求关联是否完成</p>
+                    </div>
+                    <span class="tag orange">进行中</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="status-stack">
+                      <div class="status-item good">
+                        <div class="item-top"><div class="item-title">项目：支付风控迭代项目</div><span class="tag green">已创建</span></div>
+                        <div class="item-meta"><span>已关联产品 11</span></div>
+                      </div>
+                      <div class="status-item good">
+                        <div class="item-top"><div class="item-title">团队设置</div><span class="tag green">已完成</span></div>
+                        <div class="item-meta"><span>产品/研发/测试成员已加入</span></div>
+                      </div>
+                      <div class="status-item warn">
+                        <div class="item-top"><div class="item-title">执行 4 关联需求</div><span class="tag orange">待操作</span></div>
+                        <div class="item-meta"><span>还有 2 条通过需求未加入本次执行</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">关联需求</button>
+                    <button class="btn btn-secondary">查看执行详情</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="stage" data-scene="dev">
+              <div class="timestamp">阶段二 · 研发执行</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  现在进入研发执行阶段。第一版只保留最短动作：查看任务、开始任务、完成任务、发起提测。
+                  <div class="quick-strip">
+                    <div class="chip">我的任务</div>
+                    <div class="chip">开始任务</div>
+                    <div class="chip">任务完成</div>
+                    <div class="chip">发起提测</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">研</div>
+                <div class="bubble">我的任务</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">我的研发任务</h3>
+                      <p class="card-subtitle">只展示当前研发需要推进的最小任务集合</p>
+                    </div>
+                    <span class="tag green">成功</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="stat-row">
+                      <div class="stat-pill">共 2 条</div>
+                      <div class="stat-pill">1 条进行中</div>
+                      <div class="stat-pill">1 条待处理</div>
+                    </div>
+                    <div class="list">
+                      <div class="list-item">
+                        <div class="item-top">
+                          <div class="item-title">#33 前端开发：退款审核拦截页</div>
+                          <span class="tag blue">进行中</span>
+                        </div>
+                        <div class="item-meta"><span>需求 201 · 执行 4</span><span>剩余 2h</span></div>
+                      </div>
+                      <div class="list-item overdue">
+                        <div class="item-top">
+                          <div class="item-title">#41 联调：风控服务回调</div>
+                          <span class="tag orange">待处理</span>
+                        </div>
+                        <div class="item-meta"><span>需求 201 · 执行 4</span><span>等待开始</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">开始任务 33</button>
+                    <button class="btn btn-secondary">完成任务 33</button>
+                    <button class="btn btn-ghost">发起提测</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">研</div>
+                <div class="bubble">完成任务 33</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card confirm-card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">任务完成确认</h3>
+                      <p class="card-subtitle">任务完成后可直接进入提测，减少中间跳转</p>
+                    </div>
+                    <span class="tag orange">待确认</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="confirm-panel">
+                      <div class="kv"><span>对象</span><strong>任务 #33 前端开发：退款审核拦截页</strong></div>
+                      <div class="kv"><span>当前状态</span><strong>进行中</strong></div>
+                      <div class="kv"><span>目标状态</span><strong>已完成</strong></div>
+                      <div class="kv"><span>后续影响</span><strong>纳入提测检查范围</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary" style="background: linear-gradient(180deg, #e47c24 0%, #cf6b16 100%); box-shadow: 0 10px 18px rgba(228, 124, 36, 0.24);">确认完成</button>
+                    <button class="btn btn-secondary" style="background:#fff4e8;color:#a55d13;">取消</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="stage" data-scene="test">
+              <div class="timestamp">阶段三 · 测试结果</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  现在进入测试结果阶段。第一版只保留两种结论：通过，或退回研发继续处理。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">测</div>
+                <div class="bubble">给我这次提测的测试结果</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">测试结果</h3>
+                      <p class="card-subtitle">第一版只汇总是否通过，以及是否需要退回研发</p>
+                    </div>
+                    <span class="tag orange">退回研发</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="mini-grid">
+                      <div class="mini-stat">
+                        <div class="metric-label">待修复问题</div>
+                        <div class="metric-value">1</div>
+                      </div>
+                      <div class="mini-stat">
+                        <div class="metric-label">待回归项</div>
+                        <div class="metric-value">2</div>
+                      </div>
+                    </div>
+                    <div class="summary-board">
+                      <div class="summary-row"><span>问题摘要</span><strong>支付回调金额校验仍异常</strong></div>
+                      <div class="summary-row"><span>处理建议</span><strong>退回研发修复后再次提测</strong></div>
+                      <div class="summary-row"><span>当前结论</span><strong>暂不通过</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">退回研发</button>
+                    <button class="btn btn-secondary">查看问题详情</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">测</div>
+                <div class="bubble">继续</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">阻塞项详情</h3>
+                      <p class="card-subtitle">补充展示退回研发前最需要看的问题说明</p>
+                    </div>
+                    <span class="tag blue">继续</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="status-stack">
+                      <div class="status-item warn">
+                        <div class="item-top"><div class="item-title">问题 1：支付回调金额校验异常</div><span class="tag red">待修复</span></div>
+                        <div class="item-meta"><span>已指派给李四，修复后需重新提测</span></div>
+                      </div>
+                      <div class="status-item">
+                        <div class="item-top"><div class="item-title">问题 2：退款补偿流程待回归</div><span class="tag orange">待回归</span></div>
+                        <div class="item-meta"><span>修复完成后一起重新验证</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">退回并通知研发</button>
+                    <button class="btn btn-secondary">查看详情</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="stage" data-scene="release" style="display:none;">
+              <div class="timestamp">阶段七 · 发布与上线</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  发布阶段会先创建发布单，再做上线前检查、发布确认和上线结果记录。
+                  <div class="quick-strip">
+                    <div class="chip">创建发布</div>
+                    <div class="chip">上线检查</div>
+                    <div class="chip">发布确认</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">发</div>
+                <div class="bubble">上线检查 4</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">上线前检查</h3>
+                      <p class="card-subtitle">已按 SOP 上线前检查清单汇总当前执行 4 的发布准备情况</p>
+                    </div>
+                    <span class="tag orange">需补项</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="status-stack">
+                      <div class="status-item good">
+                        <div class="item-top"><div class="item-title">高优先级 Bug 已关闭</div><span class="tag green">通过</span></div>
+                      </div>
+                      <div class="status-item good">
+                        <div class="item-top"><div class="item-title">发布单已创建</div><span class="tag green">通过</span></div>
+                      </div>
+                      <div class="status-item warn">
+                        <div class="item-top"><div class="item-title">回滚方案已确认</div><span class="tag orange">缺失</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">查看发布单</button>
+                    <button class="btn btn-secondary">补回滚方案</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">发</div>
+                <div class="bubble">将发布 7 标记为已发布</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card confirm-card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">发布状态更新确认</h3>
+                      <p class="card-subtitle">该操作会影响发布记录、上线状态和后续关闭流程</p>
+                    </div>
+                    <span class="tag orange">高风险</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="confirm-panel">
+                      <div class="kv"><span>发布</span><strong>发布 7 / alpha</strong></div>
+                      <div class="kv"><span>产品</span><strong>产品 11</strong></div>
+                      <div class="kv"><span>当前状态</span><strong>待发布</strong></div>
+                      <div class="kv"><span>目标状态</span><strong>已发布</strong></div>
+                    </div>
+                    <div class="alert">系统将记录上线时间、操作者、结果说明，并作为后续上线验收和关闭事项的输入。</div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary" style="background: linear-gradient(180deg, #e47c24 0%, #cf6b16 100%); box-shadow: 0 10px 18px rgba(228, 124, 36, 0.24);">确认发布</button>
+                    <button class="btn btn-secondary" style="background:#fff4e8;color:#a55d13;">取消</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="stage" data-scene="accept">
+              <div class="timestamp">阶段八 · 上线验收与关闭</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  上线完成后，还需要做业务验收、记录结论，并关闭需求、任务、Bug 和发布。
+                  <div class="quick-strip">
+                    <div class="chip">验收概览</div>
+                    <div class="chip">关闭准备度</div>
+                    <div class="chip">关闭事项</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">验</div>
+                <div class="bubble">验收概览 4</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">上线后验收概览</h3>
+                      <p class="card-subtitle">已汇总产品经理、测试负责人、业务验收人的核心验收结论</p>
+                    </div>
+                    <span class="tag green">验收通过</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                      <div class="summary-row"><span>业务目标</span><strong>已实现</strong></div>
+                      <div class="summary-row"><span>核心流程</span><strong>正常</strong></div>
+                      <div class="summary-row"><span>生产数据与权限</span><strong>符合预期</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">关闭事项</button>
+                    <button class="btn btn-secondary">查看验收单</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">项</div>
+                <div class="bubble">关闭需求与相关事项</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card confirm-card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">关闭事项确认</h3>
+                      <p class="card-subtitle">验收通过后，将按 SOP 关闭需求、任务、Bug 和发布记录</p>
+                    </div>
+                    <span class="tag orange">待确认</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="confirm-panel">
+                      <div class="kv"><span>研发需求</span><strong>需求 201</strong></div>
+                      <div class="kv"><span>研发任务</span><strong>3 条已完成</strong></div>
+                      <div class="kv"><span>Bug</span><strong>关闭 2 条 / 豁免 1 条</strong></div>
+                      <div class="kv"><span>发布</span><strong>发布 7 标记完成</strong></div>
+                    </div>
+                    <div class="alert">关闭后将形成完整需求生命周期闭环，遗留问题会单独留档，不会丢失审计信息。</div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary" style="background: linear-gradient(180deg, #e47c24 0%, #cf6b16 100%); box-shadow: 0 10px 18px rgba(228, 124, 36, 0.24);">确认关闭</button>
+                    <button class="btn btn-secondary" style="background:#fff4e8;color:#a55d13;">取消</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="product-manager" data-role-scene="overview">
+              <div class="timestamp">角色视角 · 产品经理</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  你当前是产品经理视角。机器人会重点协助你完成 PRD 解析、产品建立、迭代规划、研发任务拆分、评审发起和上线后验收确认。
+                  <div class="quick-strip">
+                    <div class="chip">导入 PRD</div>
+                    <div class="chip">创建产品</div>
+                    <div class="chip">拆迭代</div>
+                    <div class="chip">拆任务</div>
+                    <div class="chip">提研发需求</div>
+                    <div class="chip">发起评审</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">产</div>
+                <div class="bubble">这是退款系统 PRD，帮我创建产品、拆迭代并生成研发任务草案</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">产品经理最短闭环</h3>
+                      <p class="card-subtitle">第一版只保留发起需求、跟进状态和确认关闭三件事</p>
+                    </div>
+                    <span class="tag blue">角色主流程</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="status-stack">
+                      <div class="status-item good"><div class="item-top"><div class="item-title">1. 创建需求</div><span class="tag green">高频</span></div><div class="item-meta"><span>输入标题、描述、负责人，快速写入禅道</span></div></div>
+                      <div class="status-item"><div class="item-top"><div class="item-title">2. 确认进入开发</div><span class="tag blue">待确认</span></div><div class="item-meta"><span>由负责人确认后进入研发执行</span></div></div>
+                      <div class="status-item"><div class="item-top"><div class="item-title">3. 跟进测试结果</div><span class="tag blue">看结果</span></div><div class="item-meta"><span>通过或退回研发，状态在企微里推进</span></div></div>
+                      <div class="status-item good"><div class="item-top"><div class="item-title">4. 确认关闭</div><span class="tag green">收口</span></div><div class="item-meta"><span>测试通过后由产品确认关闭需求</span></div></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">创建需求</button>
+                    <button class="btn btn-secondary">查看我的需求</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="product-manager" data-role-scene="demand">
+              <div class="timestamp">角色子场景 · 产品经理 / 提需求</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  现在聚焦“快速提需求”。第一版不做复杂 PRD 拆解，只保留最小字段创建与负责人分派。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">产</div>
+                <div class="bubble">创建需求：退款审核增加风控拦截，负责人王敏，优先级 P1</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">需求创建卡</h3>
+                      <p class="card-subtitle">已按第一版最小字段生成需求，可直接进入后续推进</p>
+                    </div>
+                    <span class="tag orange">待确认</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                      <div class="summary-row"><span>需求标题</span><strong>退款审核增加风控拦截</strong></div>
+                      <div class="summary-row"><span>产品 / 模块</span><strong>统一支付中台 / 退款审核</strong></div>
+                      <div class="summary-row"><span>负责人 / 优先级</span><strong>王敏 / P1</strong></div>
+                      <div class="summary-row"><span>当前状态</span><strong>待确认进入开发</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">确认创建</button>
+                    <button class="btn btn-secondary">补充详情</button>
+                    <button class="btn btn-ghost">查看状态</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="product-manager" data-role-scene="acceptance">
+              <div class="timestamp">角色子场景 · 产品经理 / 确认关闭</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  现在聚焦“确认关闭”。第一版不做复杂验收单，只看是否满足关闭条件。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">产</div>
+                <div class="bubble">这条需求现在可以关闭吗</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">关闭前摘要</h3>
+                      <p class="card-subtitle">汇总需求状态、测试结果和遗留说明，供产品经理确认关闭</p>
+                    </div>
+                    <span class="tag green">可关闭</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="status-stack">
+                       <div class="status-item good"><div class="item-top"><div class="item-title">需求状态</div><span class="tag green">测试通过</span></div></div>
+                       <div class="status-item good"><div class="item-top"><div class="item-title">研发任务</div><span class="tag green">已完成</span></div></div>
+                       <div class="status-item"><div class="item-top"><div class="item-title">遗留说明</div><span class="tag blue">已记录</span></div></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">确认关闭</button>
+                    <button class="btn btn-secondary">查看需求详情</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="developer" data-role-scene="overview">
+              <div class="timestamp">角色视角 · 研发成员</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  你当前是研发视角。机器人重点服务我的任务、状态流转、工时记录、自测完成、Bug 修复和提测前状态确认。
+                  <div class="quick-strip">
+                    <div class="chip">我的任务</div>
+                    <div class="chip">开始任务</div>
+                    <div class="chip">完成任务</div>
+                    <div class="chip">修复 Bug</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">研</div>
+                <div class="bubble">我今天需要做什么</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">研发角色工作流</h3>
+                      <p class="card-subtitle">从领取任务到完成开发、自测、修复 Bug 的一整条对话操作流</p>
+                    </div>
+                    <span class="tag blue">角色主流程</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="list">
+                      <div class="list-item"><div class="item-top"><div class="item-title">1. 查我的任务</div><span class="tag green">高频</span></div><div class="item-meta"><span>直接进入当前执行和剩余工时视图</span></div></div>
+                      <div class="list-item"><div class="item-top"><div class="item-title">2. 更新任务状态</div><span class="tag orange">需确认</span></div><div class="item-meta"><span>开始、完成、关闭任务都通过确认卡收口</span></div></div>
+                      <div class="list-item"><div class="item-top"><div class="item-title">3. 记录自测结果</div><span class="tag blue">摘要</span></div><div class="item-meta"><span>主流程、异常处理、基础数据检查结果回填</span></div></div>
+                      <div class="list-item"><div class="item-top"><div class="item-title">4. 修复并提交 Bug</div><span class="tag green">可直达</span></div><div class="item-meta"><span>从“指派给我”的 Bug 卡直接进入修复与回填</span></div></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">我的任务</button>
+                    <button class="btn btn-secondary">我的 Bug</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="developer" data-role-scene="task">
+              <div class="timestamp">角色子场景 · 研发 / 做任务</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  这里专门模拟研发“做任务”的过程：查任务、开始任务、记录工时、完成任务。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">研</div>
+                <div class="bubble">开始任务 33</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card confirm-card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">任务开始确认</h3>
+                      <p class="card-subtitle">开始任务后会进入执行统计，并开始记录研发节奏</p>
+                    </div>
+                    <span class="tag orange">待确认</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="confirm-panel">
+                      <div class="kv"><span>任务</span><strong>#33 前端开发：退款审核拦截页</strong></div>
+                      <div class="kv"><span>当前状态</span><strong>未开始</strong></div>
+                      <div class="kv"><span>目标状态</span><strong>进行中</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary" style="background: linear-gradient(180deg, #e47c24 0%, #cf6b16 100%); box-shadow: 0 10px 18px rgba(228, 124, 36, 0.24);">确认开始</button>
+                    <button class="btn btn-secondary" style="background:#fff4e8;color:#a55d13;">取消</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="developer" data-role-scene="bugfix" style="display:none;">
+              <div class="timestamp">角色子场景 · 研发 / 修 Bug</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  这里专门看研发如何处理“指派给我”的 Bug，并回填解决方案，等待测试回归。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">研</div>
+                <div class="bubble">我的 Bug</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">指派给我的 Bug</h3>
+                      <p class="card-subtitle">修复完成后可直接回填解决方案并进入待验证</p>
+                    </div>
+                    <span class="tag blue">2 条待处理</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="list">
+                      <div class="list-item overdue"><div class="item-top"><div class="item-title">Bug #108 支付回调金额校验异常</div><span class="tag red">严重</span></div><div class="item-meta"><span>当前状态：激活</span><span>指派给你</span></div></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">标记已解决</button>
+                    <button class="btn btn-secondary">查看详情</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="tester" data-role-scene="overview">
+              <div class="timestamp">角色视角 · 测试成员 / 测试负责人</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  你当前是测试视角。机器人会帮助你看测试范围、执行用例、提 Bug、回归验证，并形成准出结论。
+                  <div class="quick-strip">
+                    <div class="chip">查测试单</div>
+                    <div class="chip">创建 Bug</div>
+                    <div class="chip">回归验证</div>
+                    <div class="chip">测试准出</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">测</div>
+                <div class="bubble">我这个角色怎么完整处理工作流</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">测试角色工作流</h3>
+                      <p class="card-subtitle">覆盖编写用例、提测执行、提 Bug、回归、准出判断</p>
+                    </div>
+                    <span class="tag blue">角色主流程</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="status-stack">
+                      <div class="status-item"><div class="item-top"><div class="item-title">1. 查测试范围与测试单</div><span class="tag blue">摘要</span></div><div class="item-meta"><span>明确产品、模块、执行、需求关联</span></div></div>
+                      <div class="status-item good"><div class="item-top"><div class="item-title">2. 执行测试并提 Bug</div><span class="tag green">高频</span></div><div class="item-meta"><span>在企微里直接发起 Bug，复杂字段跳自建应用</span></div></div>
+                      <div class="status-item"><div class="item-top"><div class="item-title">3. 回归验证</div><span class="tag blue">继续承接</span></div><div class="item-meta"><span>围绕 Bug 和相邻功能继续验证</span></div></div>
+                      <div class="status-item warn"><div class="item-top"><div class="item-title">4. 输出准出结论</div><span class="tag orange">管理决策</span></div><div class="item-meta"><span>系统汇总 Bug、回归和发布说明后给出结论</span></div></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">测试准出</button>
+                    <button class="btn btn-secondary">创建 Bug</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="tester" data-role-scene="execute">
+              <div class="timestamp">角色子场景 · 测试 / 执行测试</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  这里专门看测试执行动作：看测试单、跑用例、失败时提 Bug，必要时跳自建应用补全复现信息。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">测</div>
+                <div class="bubble">执行测试单 12</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">测试执行卡</h3>
+                      <p class="card-subtitle">适合在企微里快速看当前进度，并从失败项直达提 Bug</p>
+                    </div>
+                    <span class="tag blue">执行中</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                      <div class="summary-row"><span>总用例</span><strong>18</strong></div>
+                      <div class="summary-row"><span>已通过</span><strong>15</strong></div>
+                      <div class="summary-row"><span>失败项</span><strong>3</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">查看失败项</button>
+                    <button class="btn btn-secondary">创建 Bug</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="tester" data-role-scene="readiness" style="display:none;">
+              <div class="timestamp">角色子场景 · 测试 / 准出判断</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  这里专门看测试负责人输出准出结论：要把核心需求通过、严重 Bug、回归结果和发布说明一起考虑。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">测</div>
+                <div class="bubble">是否允许上线</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">准出决策卡</h3>
+                      <p class="card-subtitle">把测试负责人最终判断沉淀为可追溯结论</p>
+                    </div>
+                    <span class="tag orange">暂不允许</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="status-stack">
+                      <div class="status-item warn"><div class="item-top"><div class="item-title">阻断 / 严重 Bug</div><span class="tag red">未清零</span></div></div>
+                      <div class="status-item"><div class="item-top"><div class="item-title">回归状态</div><span class="tag orange">未全部完成</span></div></div>
+                      <div class="status-item good"><div class="item-top"><div class="item-title">发布说明</div><span class="tag green">已齐全</span></div></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">查看阻塞项</button>
+                    <button class="btn btn-secondary">通知项目经理</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="manager" data-role-scene="overview" style="display:none;">
+              <div class="timestamp">角色视角 · 项目经理 / 发布负责人 / 管理者</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  你当前是管理视角。机器人更像流程驾驶舱，帮助你看评审、准备度、准出、发布、验收和关闭。
+                  <div class="quick-strip">
+                    <div class="chip">项目准备度</div>
+                    <div class="chip">上线检查</div>
+                    <div class="chip">发布确认</div>
+                    <div class="chip">关闭事项</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">管</div>
+                <div class="bubble">给我看管理角色的完整工作流</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">管理角色工作流</h3>
+                      <p class="card-subtitle">从项目准备、迭代推进、测试准出、发布上线到关闭事项的全流程摘要</p>
+                    </div>
+                    <span class="tag orange">管理视图</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                      <div class="summary-row"><span>前期</span><strong>看项目、团队、执行、需求关联准备度</strong></div>
+                      <div class="summary-row"><span>中期</span><strong>看任务完成率、Bug 修复率、提测范围</strong></div>
+                      <div class="summary-row"><span>上线前</span><strong>看准出结论、上线检查、发布单</strong></div>
+                      <div class="summary-row"><span>上线后</span><strong>看验收概览、关闭准备度、关闭事项</strong></div>
+                    </div>
+                    <div class="alert">管理角色不一定直接创建所有对象，但需要通过机器人快速看清每个阶段是否具备进入下一步的条件。</div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">项目准备度</button>
+                    <button class="btn btn-secondary">上线检查</button>
+                    <button class="btn btn-ghost">验收概览</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="manager" data-role-scene="project-view" style="display:none;">
+              <div class="timestamp">角色子场景 · 管理 / 项目推进</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  这里专门看项目经理如何通过机器人判断项目是否具备进入下一阶段的条件。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">管</div>
+                <div class="bubble">执行 4 现在推进到哪里了</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">项目推进驾驶舱</h3>
+                      <p class="card-subtitle">聚焦项目经理最关心的准备度、完成率、风险项</p>
+                    </div>
+                    <span class="tag orange">有风险</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                      <div class="summary-row"><span>需求进入执行</span><strong>8 / 8</strong></div>
+                      <div class="summary-row"><span>研发任务完成率</span><strong>75%</strong></div>
+                      <div class="summary-row"><span>阻断风险</span><strong>支付回调 Bug</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">看风险详情</button>
+                    <button class="btn btn-secondary">看任务完成率</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="manager" data-role-scene="release-view" style="display:none;">
+              <div class="timestamp">角色子场景 · 管理 / 上线关闭</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  这里专门看发布负责人 / 管理者如何通过机器人完成上线检查、发布确认、验收关闭闭环。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">管</div>
+                <div class="bubble">这次上线是否可以收尾</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">上线收尾卡</h3>
+                      <p class="card-subtitle">从上线检查到关闭事项，统一以管理视角呈现最后一公里</p>
+                    </div>
+                    <span class="tag green">可收尾</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                      <div class="summary-row"><span>上线结果</span><strong>已发布成功</strong></div>
+                      <div class="summary-row"><span>验收结果</span><strong>已通过</strong></div>
+                      <div class="summary-row"><span>关闭准备度</span><strong>满足条件</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">关闭事项</button>
+                    <button class="btn btn-secondary">查看验收单</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="collaboration" data-role-scene="overview">
+              <div class="timestamp">角色视角 · 跨角色协作总览</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  这里不再按单个角色看，而是直接看一条完整协作链：产品提需求，管理推进迭代，研发完成任务，测试给准出，发布上线，最后产品和业务完成验收关闭。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">协</div>
+                <div class="bubble">把整个跨角色流程给我串起来</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">跨角色协作总览</h3>
+                      <p class="card-subtitle">机器人在同一条链路里为不同角色提供不同入口，但沉淀到同一套流程上下文</p>
+                    </div>
+                    <span class="tag blue">总览</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="status-stack">
+                      <div class="status-item good"><div class="item-top"><div class="item-title">1. 产品提需求</div><span class="tag green">起点</span></div><div class="item-meta"><span>需求进入产品池，等待评审</span></div></div>
+                      <div class="status-item"><div class="item-top"><div class="item-title">2. 管理推进迭代</div><span class="tag blue">接力</span></div><div class="item-meta"><span>项目、团队、执行、需求关联</span></div></div>
+                      <div class="status-item"><div class="item-top"><div class="item-title">3. 研发执行与完成</div><span class="tag blue">接力</span></div><div class="item-meta"><span>任务开发、自测、提交提测</span></div></div>
+                      <div class="status-item"><div class="item-top"><div class="item-title">4. 测试执行与准出</div><span class="tag orange">关键闸口</span></div><div class="item-meta"><span>测试、提 Bug、回归、准出判断</span></div></div>
+                      <div class="status-item good"><div class="item-top"><div class="item-title">5. 发布上线与关闭</div><span class="tag green">收口</span></div><div class="item-meta"><span>发布、验收、关闭事项</span></div></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">看角色接力</button>
+                    <button class="btn btn-secondary">看上线闭环</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="collaboration" data-role-scene="handoff-chain" style="display:none;">
+              <div class="timestamp">角色视角 · 角色接力链路</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  现在看“角色接力”示意图。重点不是某个角色单独做什么，而是一个角色的输出如何成为下一个角色的输入。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">协</div>
+                <div class="bubble">按角色接力展示</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">角色接力图</h3>
+                      <p class="card-subtitle">每个角色都不是孤立操作，机器人负责把上一步产物带给下一步角色</p>
+                    </div>
+                    <span class="tag orange">接力链</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="summary-board">
+                      <div class="summary-row"><span>产品 → 管理</span><strong>需求草稿 / 评审结论 → 进入项目与执行</strong></div>
+                      <div class="summary-row"><span>管理 → 研发</span><strong>执行范围 / 任务分派 → 我的任务列表</strong></div>
+                      <div class="summary-row"><span>研发 → 测试</span><strong>任务完成 / 自测结果 → 提测与测试执行</strong></div>
+                      <div class="summary-row"><span>测试 → 管理</span><strong>准出结论 / 阻塞项 → 是否允许上线</strong></div>
+                      <div class="summary-row"><span>管理 → 产品/业务</span><strong>发布结果 / 验收触发 → 验收关闭</strong></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary">查看接力节点</button>
+                    <button class="btn btn-secondary">查看闸口条件</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card" style="width: 100%; max-width: 308px; display:none;"></div>
+              </div>
+            </div>
+
+            <div class="phone-scene" data-mode="role" data-role="collaboration" data-role-scene="close-loop" style="display:none;">
+              <div class="timestamp">角色视角 · 上线闭环链路</div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="bubble">
+                  这里专门展示从测试准出到发布上线，再到验收关闭的最后一公里，方便评审“流程是怎么闭环的”。
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="avatar">协</div>
+                <div class="bubble">给我看上线闭环怎么串起来</div>
+              </div>
+
+              <div class="message bot">
+                <div class="avatar">AI</div>
+                <div class="card confirm-card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">上线闭环链路</h3>
+                      <p class="card-subtitle">测试、发布、产品、业务验收在机器人里形成最后一段闭环</p>
+                    </div>
+                    <span class="tag orange">闭环</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="confirm-panel">
+                      <div class="kv"><span>测试输出</span><strong>允许上线 / 不允许上线</strong></div>
+                      <div class="kv"><span>发布输出</span><strong>发布单 + 上线结果 + 回滚方案</strong></div>
+                      <div class="kv"><span>验收输出</span><strong>验收通过 / 驳回整改</strong></div>
+                      <div class="kv"><span>关闭输出</span><strong>需求、任务、Bug、发布完成关闭</strong></div>
+                    </div>
+                    <div class="alert">真正的闭环不是“发布成功”就结束，而是“验收通过 + 关闭事项完成 + 遗留问题留档”。机器人在这里承担的是跨角色信息串联和确认收口。</div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-primary" style="background: linear-gradient(180deg, #e47c24 0%, #cf6b16 100%); box-shadow: 0 10px 18px rgba(228, 124, 36, 0.24);">查看关闭条件</button>
+                    <button class="btn btn-secondary" style="background:#fff4e8;color:#a55d13;">查看验收单</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="composer">
+            <div class="composer-box">
+              <div class="composer-input">输入你的问题，例如：测试准出 4</div>
+              <div class="send">➜</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spec-panel">
+        <div class="panel-title">
+          <div>
+            <h3>最终交互效果说明</h3>
+            <p>左侧是最终最接近企微会话里的交互预期：一问一答、多轮补问、确认卡、错误卡都在同一条消息流里完成。右侧会跟随当前阶段 / 角色切换成对应的注意点、建议产物和应用承接成品，方便直接评审“这一屏应该做什么”。</p>
+            <div class="role-indicator" id="roleIndicator"><span class="dot"></span><span id="roleIndicatorText">当前角色：产品经理</span></div>
+          </div>
+          <span class="tag blue">可评审原型</span>
+        </div>
+
+        <div class="legend">
+          <div class="legend-item"><span class="dot" style="background:#2f6bff"></span> 查询结果卡</div>
+          <div class="legend-item"><span class="dot" style="background:#e47c24"></span> 危险操作确认卡</div>
+          <div class="legend-item"><span class="dot" style="background:#1e9b63"></span> 成功回执/工作台正向状态</div>
+          <div class="legend-item"><span class="dot" style="background:#d14343"></span> 失败与权限不足</div>
+        </div>
+
+        <div class="sections">
+          <section class="section">
+            <h4>场景切换说明</h4>
+            <div class="section-grid">
+              <div class="spec-card scene-view" data-mode="stage" data-scene="setup" style="display:none;">
+                <h5>系统准备</h5>
+                <ul>
+                  <li>对应 SOP Step 1-2：创建用户与角色、检查权限完整性。</li>
+                  <li>重点看管理员如何在企微里快速做权限检查与身份同步。</li>
+                  <li>用于评审“准备阶段是否能前置暴露问题”。</li>
+                </ul>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="product" style="display:none;">
+                <h5>产品建立</h5>
+                <ul>
+                  <li>对应 SOP Step 3-5：项目集、产品、模块建立。</li>
+                  <li>重点体现产品初始化草稿卡和模块确认。</li>
+                  <li>用于评审“业务归属能否在对话里快速建立”。</li>
+                </ul>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="review">
+                <h5>需求评审</h5>
+                <ul>
+                  <li>对应 SOP Step 6-7：提出研发需求并组织评审。</li>
+                  <li>重点是需求草稿卡、评审结论卡。</li>
+                  <li>用于评审“需求进入交付范围前的信息完整度”。</li>
+                </ul>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="project" style="display:none;">
+                <h5>项目迭代</h5>
+                <ul>
+                  <li>对应 SOP Step 8-11：创建项目、设置团队、创建执行、关联需求。</li>
+                  <li>重点是项目准备清单和执行缺口提示。</li>
+                  <li>用于评审“项目经理在企微里看准备度”的价值。</li>
+                </ul>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="dev">
+                <h5>研发执行</h5>
+                <ul>
+                  <li>对应 SOP Step 12-14：拆任务、研发执行、自测完成。</li>
+                  <li>重点是我的任务卡和任务完成确认卡。</li>
+                  <li>用于评审“研发高频动作是否能在卡片里闭环”。</li>
+                </ul>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="test">
+                <h5>测试回归</h5>
+                <ul>
+                  <li>对应 SOP Step 15-20：用例、提测、测试、Bug 修复、回归、准出。</li>
+                  <li>重点是准出摘要卡和阻塞项继续查看。</li>
+                  <li>用于评审“测试负责人如何在企微看准出结论”。</li>
+                </ul>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="release" style="display:none;">
+                <h5>发布上线</h5>
+                <ul>
+                  <li>对应 SOP Step 21-22：创建发布、上线执行。</li>
+                  <li>重点是上线检查卡和发布确认卡。</li>
+                  <li>用于评审“发布负责人是否能在企微完成确认”。</li>
+                </ul>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="accept">
+                <h5>验收关闭</h5>
+                <ul>
+                  <li>对应 SOP Step 23-24：上线后业务验收、关闭需求与事项。</li>
+                  <li>重点是验收概览和关闭事项确认。</li>
+                  <li>用于评审“整个流程是否能形成最终闭环”。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="product-manager">
+                <h5>产品角色工作流</h5>
+                <ul>
+                  <li>围绕产品建立、需求提出、评审结论、上线验收展开。</li>
+                  <li>重点关注“我要提什么”“评审结论是什么”“上线后是否能验收通过”。</li>
+                  <li>机器人适合做需求草稿、评审摘要、验收概览。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="product-manager" data-role-scene="demand">
+                <h5>产品 / 提需求</h5>
+                <ul>
+                  <li>聚焦需求提报、字段补齐、评审前信息整理。</li>
+                  <li>最适合用机器人先生成需求草稿，再进评审。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="product-manager" data-role-scene="acceptance">
+                <h5>产品 / 做验收</h5>
+                <ul>
+                  <li>聚焦业务目标、核心流程、权限、页面/接口验收。</li>
+                  <li>最适合用摘要卡快速判断是否进入关闭阶段。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="developer" style="display:none;">
+                <h5>研发角色工作流</h5>
+                <ul>
+                  <li>围绕我的任务、状态流转、工时、自测、Bug 修复展开。</li>
+                  <li>重点关注“今天干什么”“任务能否结束”“还有哪些 Bug 待修复”。</li>
+                  <li>机器人适合承接高频动作，自建应用承接复杂对象详情。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="developer" data-role-scene="task">
+                <h5>研发 / 做任务</h5>
+                <ul>
+                  <li>聚焦开始任务、记录工时、完成任务。</li>
+                  <li>强调高频状态流转和确认卡。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="developer" data-role-scene="bugfix" style="display:none;">
+                <h5>研发 / 修 Bug</h5>
+                <ul>
+                  <li>聚焦“指派给我”的 Bug、修复回填、待验证状态。</li>
+                  <li>强调从 Bug 卡直接进入修复闭环。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="tester" style="display:none;">
+                <h5>测试角色工作流</h5>
+                <ul>
+                  <li>围绕测试范围、执行用例、提 Bug、回归、准出展开。</li>
+                  <li>重点关注“当前阻塞项是什么”“是否允许上线”。</li>
+                  <li>机器人适合输出摘要与阻塞项，自建应用承接复杂 Bug 补录。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="tester" data-role-scene="execute">
+                <h5>测试 / 执行测试</h5>
+                <ul>
+                  <li>聚焦测试单、用例执行进度和失败项处理。</li>
+                  <li>强调测试执行卡和失败直达提 Bug。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="tester" data-role-scene="readiness" style="display:none;">
+                <h5>测试 / 准出判断</h5>
+                <ul>
+                  <li>聚焦阻断 Bug、回归完成度、发布说明是否齐全。</li>
+                  <li>强调准出卡是管理决策输入。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="manager" style="display:none;">
+                <h5>管理角色工作流</h5>
+                <ul>
+                  <li>围绕项目准备度、发布准备度、验收与关闭展开。</li>
+                  <li>重点关注“是否能进入下一阶段”“风险在哪”。</li>
+                  <li>机器人更像驾驶舱，自建应用更像结构化管理台。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="manager" data-role-scene="project-view" style="display:none;">
+                <h5>管理 / 项目推进</h5>
+                <ul>
+                  <li>聚焦项目准备度、任务完成率、风险项。</li>
+                  <li>强调项目推进驾驶舱价值。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="manager" data-role-scene="release-view" style="display:none;">
+                <h5>管理 / 上线关闭</h5>
+                <ul>
+                  <li>聚焦上线检查、发布确认、关闭事项。</li>
+                  <li>强调最后一公里的管理收口能力。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="collaboration">
+                <h5>跨角色协作总览</h5>
+                <ul>
+                  <li>把产品、管理、研发、测试、发布、验收串成同一条协作链。</li>
+                  <li>重点是“谁把什么交给谁”，而不是单角色局部效率。</li>
+                  <li>机器人价值体现在上下文承接和跨角色信息收口。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="collaboration" data-role-scene="handoff-chain" style="display:none;">
+                <h5>跨角色 / 角色接力</h5>
+                <ul>
+                  <li>展示需求草稿、任务、提测、准出、发布结果如何逐步接力。</li>
+                  <li>适合评审“机器人如何承接角色之间的信息传递”。</li>
+                </ul>
+              </div>
+
+              <div class="spec-card scene-view" data-mode="role" data-role="collaboration" data-role-scene="close-loop" style="display:none;">
+                <h5>跨角色 / 上线闭环</h5>
+                <ul>
+                  <li>展示测试准出、发布上线、业务验收、关闭事项的闭环关系。</li>
+                  <li>适合评审“最终为什么不是发完版就结束”。</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="section scene-view" data-mode="role" data-role="collaboration" data-role-scene="handoff-chain" style="display:none;">
+            <h4>跨角色泳道图</h4>
+            <div class="lane-board">
+              <div class="lane-row">
+                <div class="lane-role">产品</div>
+                <div class="lane-track">
+                  <div class="handoff-node input">
+                    <strong>提出研发需求</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 3</span><span class="step-badge">Step 6</span></div>
+                    <span>补齐产品、模块、优先级、验收标准、评审人</span>
+                  </div>
+                  <div class="handoff-node output">
+                    <strong>需求草稿</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 3</span><span class="step-badge">Step 7</span></div>
+                    <span>进入产品池，等待评审与是否进入迭代决策</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="lane-row">
+                <div class="lane-role">管理</div>
+                <div class="lane-track">
+                  <div class="handoff-node input">
+                    <strong>接收评审结论</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 3</span><span class="step-badge">Step 7</span></div>
+                    <span>确认通过、拆分、暂缓或驳回</span>
+                  </div>
+                  <div class="handoff-node">
+                    <strong>建项目 / 执行</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 4</span><span class="step-badge">Step 8-10</span></div>
+                    <span>设置团队、创建迭代、关联需求到执行</span>
+                  </div>
+                  <div class="handoff-node output">
+                    <strong>任务拆解输入</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 4</span><span class="step-badge">Step 11</span></div>
+                    <span>把执行范围和交付边界交给研发负责人</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="lane-row">
+                <div class="lane-role">研发</div>
+                <div class="lane-track">
+                  <div class="handoff-node input">
+                    <strong>领取研发任务</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 5</span><span class="step-badge">Step 12</span></div>
+                    <span>前端 / 后端 / 联调 / 数据 / 自测修复</span>
+                  </div>
+                  <div class="handoff-node">
+                    <strong>开发与自测</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 5</span><span class="step-badge">Step 13-14</span></div>
+                    <span>更新状态、记录工时、完成任务</span>
+                  </div>
+                  <div class="handoff-node output">
+                    <strong>提测输入</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 6</span><span class="step-badge">Step 16</span></div>
+                    <span>任务完成、自测通过、测试环境就绪</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="lane-row">
+                <div class="lane-role">测试</div>
+                <div class="lane-track">
+                  <div class="handoff-node input">
+                    <strong>接收提测</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 6</span><span class="step-badge">Step 16</span></div>
+                    <span>提测范围、需求列表、版本信息、环境地址</span>
+                  </div>
+                  <div class="handoff-node">
+                    <strong>执行测试 / 提 Bug</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 6</span><span class="step-badge">Step 15 / 17-19</span></div>
+                    <span>执行用例、记录通过失败、提交 Bug</span>
+                  </div>
+                  <div class="handoff-node gate">
+                    <strong>准出判断</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 6</span><span class="step-badge">Step 20</span></div>
+                    <span>核心需求、严重 Bug、回归、发布说明是否满足上线</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="lane-row">
+                <div class="lane-role">发布</div>
+                <div class="lane-track">
+                  <div class="handoff-node input">
+                    <strong>接收准出结论</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 7</span><span class="step-badge">Step 20</span></div>
+                    <span>允许上线或继续整改</span>
+                  </div>
+                  <div class="handoff-node">
+                    <strong>创建发布 / 上线执行</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 7</span><span class="step-badge">Step 21-22</span></div>
+                    <span>发布单、回滚方案、上线时间、部署结果</span>
+                  </div>
+                  <div class="handoff-node output">
+                    <strong>上线结果</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 8</span><span class="step-badge">Step 23</span></div>
+                    <span>发布完成，等待产品与业务方验收</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="lane-row">
+                <div class="lane-role">验收</div>
+                <div class="lane-track">
+                  <div class="handoff-node input">
+                    <strong>接收上线结果</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 8</span><span class="step-badge">Step 23</span></div>
+                    <span>查看业务目标、核心流程、数据和权限是否正常</span>
+                  </div>
+                  <div class="handoff-node gate">
+                    <strong>验收结论</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 8</span><span class="step-badge">Step 23</span></div>
+                    <span>通过或驳回整改，决定是否进入关闭</span>
+                  </div>
+                  <div class="handoff-node output">
+                    <strong>关闭事项</strong>
+                    <div class="step-badges"><span class="step-badge">阶段 8</span><span class="step-badge">Step 24</span></div>
+                    <span>关闭需求、任务、Bug、发布并形成完整生命周期</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="lane-meta">
+              <h6>这张泳道图表达的核心</h6>
+              <div class="lane-meta-grid">
+                <div class="lane-meta-card">
+                  <strong>输入</strong>
+                  <span>上一个角色交付给下一个角色的明确对象、摘要或结论。</span>
+                </div>
+                <div class="lane-meta-card">
+                  <strong>闸口</strong>
+                  <span>评审、准出、验收这些不是普通节点，而是是否能进入下一阶段的关键判定点。</span>
+                </div>
+                <div class="lane-meta-card">
+                  <strong>输出</strong>
+                  <span>机器人应沉淀清晰可追溯的结果卡，供下一角色直接接力，不要求重复解释背景。</span>
+                </div>
+                <div class="lane-meta-card">
+                  <strong>阶段 / Step</strong>
+                  <span>每个节点都已标注对应 SOP 阶段和 Step 编号，评审时可直接和执行清单逐项对照。</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h4>当前场景注意点</h4>
+            <div class="focus-grid">
+              <div class="spec-card scene-view" data-mode="stage" data-scene="setup" style="display:none;">
+                <h5>系统准备 · 注意点</h5>
+                <ul>
+                  <li>第一屏先暴露身份映射、权限缺口和同步结果，不要让用户先试错。</li>
+                  <li>优先展示“谁没绑定”“哪些角色缺权限”“下一步去哪里修”。</li>
+                  <li>适合产出权限检查卡、身份同步卡、失败恢复卡。</li>
+                </ul>
+                <div class="focus-note">成品建议：自建应用承接成员映射表、角色权限矩阵和同步日志页。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="product" style="display:none;">
+                <h5>产品建立 · 注意点</h5>
+                <ul>
+                  <li>重点不是直接创建成功，而是先把产品名、模块、归属和负责人草案收拢清楚。</li>
+                  <li>机器人应优先展示产品初始化摘要和待确认模块，不要一上来就长表单。</li>
+                  <li>适合产出产品草稿卡、模块确认卡、重名冲突提示卡。</li>
+                </ul>
+                <div class="focus-note">成品建议：右侧成品应是产品初始化确认页，支持产品名、模块树、负责人和产品线编辑。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="review">
+                <h5>需求发起 · 注意点</h5>
+                <ul>
+                  <li>第一版只保留最小需求创建，不做正式评审和复杂拆解。</li>
+                  <li>必须突出需求标题、负责人、优先级和是否进入开发。</li>
+                  <li>适合产出需求创建结果卡、进入开发确认卡、需求详情入口。</li>
+                </ul>
+                <div class="focus-note">成品建议：应用页优先做需求详情页，只承接补充描述、负责人和优先级。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="project" style="display:none;">
+                <h5>项目迭代 · 注意点</h5>
+                <ul>
+                  <li>关注项目准备度、团队是否齐、执行时间是否冲突，而不是只展示创建成功。</li>
+                  <li>卡片要能快速说明哪些需求已挂接、哪些执行还缺团队或负责人。</li>
+                  <li>适合产出项目准备清单卡、执行缺口提示卡。</li>
+                </ul>
+                <div class="focus-note">成品建议：应用页重点做执行规划台，承接团队、周期、需求挂接和缺口修正。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="dev">
+                <h5>研发执行 · 注意点</h5>
+                <ul>
+                  <li>高频动作必须短链路，优先支持我的任务、开始任务、完成任务、发起提测。</li>
+                  <li>卡片里必须显示任务 ID、当前状态和直接动作，不要求第一版就做完整工时体系。</li>
+                  <li>适合产出我的任务卡、开始确认卡、完成确认卡、提测确认卡。</li>
+                </ul>
+                <div class="focus-note">成品建议：应用页先做任务详情和简单备注补录，不把复杂说明塞进聊天卡片。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="test">
+                <h5>测试结果 · 注意点</h5>
+                <ul>
+                  <li>第一版只保留“通过”或“退回研发”两种测试结论，不做完整准出体系。</li>
+                  <li>问题描述尽量简短，复杂复现信息再跳到应用页补录。</li>
+                  <li>适合产出提测确认卡、测试结果卡、问题详情入口。</li>
+                </ul>
+                <div class="focus-note">成品建议：应用页承接测试结果详情和最小 Bug 挂载，机器人负责结论与推进。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="release" style="display:none;">
+                <h5>发布上线 · 注意点</h5>
+                <ul>
+                  <li>所有上线动作都应强调风险、回滚方案、影响范围和确认痕迹。</li>
+                  <li>发布负责人最关心的是“现在能不能发”和“缺什么不能发”。</li>
+                  <li>适合产出上线检查卡、发布确认卡、失败恢复卡。</li>
+                </ul>
+                <div class="focus-note">成品建议：应用页应展示发布详情、回滚方案、变更清单和上线记录。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="stage" data-scene="accept">
+                <h5>关闭确认 · 注意点</h5>
+                <ul>
+                  <li>第一版只判断能不能关闭，不做复杂验收清单和正式归档流。</li>
+                  <li>必须把测试结果、任务完成情况和遗留说明汇总到一张卡里。</li>
+                  <li>适合产出关闭前摘要卡、关闭确认卡。</li>
+                </ul>
+                <div class="focus-note">成品建议：应用页应展示关闭确认页，支持查看需求详情、测试结果和遗留说明。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="product-manager">
+                <h5>产品经理 · 注意点</h5>
+                <ul>
+                  <li>第一版只服务产品经理的三件事：创建需求、看状态、确认关闭。</li>
+                  <li>不要让产品经理在企微里处理复杂 PRD 拆解、评审编排和迭代规划。</li>
+                  <li>适合产出需求创建卡、状态推进卡、关闭确认卡。</li>
+                </ul>
+                <div class="focus-note">成品建议：重点页面是需求创建页、需求详情页和关闭确认页。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="product-manager" data-role-scene="demand">
+                <h5>产品 / 提需求 · 注意点</h5>
+                <ul>
+                  <li>核心是用最少字段快速创建需求，不要把 PRD 拆解做成第一版前提。</li>
+                  <li>必须给产品经理可编辑的标题、描述、负责人、优先级和产品/模块字段。</li>
+                </ul>
+                <div class="focus-note">成品建议：右侧优先展示需求创建页和需求详情页，而不是复杂草案工作台。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="product-manager" data-role-scene="acceptance">
+                <h5>产品 / 确认关闭 · 注意点</h5>
+                <ul>
+                  <li>第一版重点是判断是否满足关闭条件，而不是做完整业务验收。</li>
+                  <li>关闭动作前必须让产品经理看到测试结果、任务完成情况和遗留说明。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示关闭前摘要页和关闭确认卡，遗留说明作为补充信息查看。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="developer">
+                <h5>研发 · 注意点</h5>
+                <ul>
+                  <li>研发最关心今天做什么、任务能否结束、还有哪些 Bug 等我修。</li>
+                  <li>机器人必须保证高频动作一屏闭环，复杂详情再跳应用。</li>
+                </ul>
+                <div class="focus-note">成品建议：工作台默认落在“我的任务 + 我的 Bug + 待确认动作”。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="developer" data-role-scene="task">
+                <h5>研发 / 做任务 · 注意点</h5>
+                <ul>
+                  <li>强调开始任务、完成任务、发起提测三个关键动作。</li>
+                  <li>任务详情和补充说明更适合放应用页，聊天里只保留推进动作。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示任务详情页、完成确认卡和提测确认卡的组合效果。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="developer" data-role-scene="bugfix" style="display:none;">
+                <h5>研发 / 修 Bug · 注意点</h5>
+                <ul>
+                  <li>先给“指派给我”的 Bug 摘要，再进入修复回填。</li>
+                  <li>解决方案、附件、验证说明应放详情页而不是消息流。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示我的 Bug 列表和 Bug 回填页。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="tester" style="display:none;">
+                <h5>测试 · 注意点</h5>
+                <ul>
+                  <li>测试第一关注是范围、阻塞项和能否准出，不是对象创建本身。</li>
+                  <li>机器人适合给结论，自建应用适合给完整证据和附件。</li>
+                </ul>
+                <div class="focus-note">成品建议：工作台默认突出准出状态、阻塞 Bug 和待回归项。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="tester" data-role-scene="execute">
+                <h5>测试 / 执行测试 · 注意点</h5>
+                <ul>
+                  <li>第一版重点是输出测试结论，不必展开完整测试流程和报告结构。</li>
+                  <li>复杂复现步骤、环境信息、附件都交给应用页，聊天里保留通过或退回。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示测试结果页和问题详情页的联动。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="tester" data-role-scene="readiness" style="display:none;">
+                <h5>测试 / 准出判断 · 注意点</h5>
+                <ul>
+                  <li>准出卡只说最关键结论：能否上线、阻断项、待回归项、发布说明缺口。</li>
+                  <li>适合继续查看，不适合第一屏塞完整测试报告。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示准出摘要卡和完整报告入口。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="manager" style="display:none;">
+                <h5>管理 · 注意点</h5>
+                <ul>
+                  <li>管理最关心的是“当前能否进入下一阶段”和“风险在哪”。</li>
+                  <li>右侧应更像驾驶舱，而不是单对象表单。</li>
+                </ul>
+                <div class="focus-note">成品建议：工作台聚焦准备度、完成率、阻塞项和上线条件。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="manager" data-role-scene="project-view" style="display:none;">
+                <h5>管理 / 项目推进 · 注意点</h5>
+                <ul>
+                  <li>突出准备度、逾期任务、团队缺口和阶段风险。</li>
+                  <li>适合做项目推进驾驶舱，不适合做复杂录入页。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示项目推进看板和阻塞项明细入口。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="manager" data-role-scene="release-view" style="display:none;">
+                <h5>管理 / 上线关闭 · 注意点</h5>
+                <ul>
+                  <li>核心是“是否可发”“发后怎么回滚”“关哪些对象”。</li>
+                  <li>确认卡必须足够强，避免误点带来流程事故。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示上线检查页、发布确认页和关闭项清单。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="collaboration">
+                <h5>跨角色协作 · 注意点</h5>
+                <ul>
+                  <li>第一版只需要讲清一条最短闭环：需求创建、任务执行、测试结果、确认关闭。</li>
+                  <li>右侧应突出当前卡点和下一责任人，而不是完整泳道和复杂交接物。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示最短闭环总览卡，帮助团队看清一条需求如何被推进到关闭。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="collaboration" data-role-scene="handoff-chain" style="display:none;">
+                <h5>跨角色 / 角色接力 · 注意点</h5>
+                <ul>
+                  <li>每一段都要写清“谁输出什么给下一个角色”。</li>
+                  <li>适合做交接物清单，不适合做字段表单。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示交接链路板：需求草案 -> 任务 -> 提测 -> 准出 -> 发布。</div>
+              </div>
+              <div class="spec-card scene-view" data-mode="role" data-role="collaboration" data-role-scene="close-loop" style="display:none;">
+                <h5>跨角色 / 上线闭环 · 注意点</h5>
+                <ul>
+                  <li>必须强调验收通过、关闭事项和遗留问题留档三件事一起成立才算闭环。</li>
+                  <li>适合把测试、发布、产品和业务确认串成最终回执。</li>
+                </ul>
+                <div class="focus-note">成品建议：展示上线闭环板和关闭项确认页。</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h4 id="deliverableTitle">当前场景推荐成品</h4>
+            <div class="deliverable-board">
+              <div class="scene-view" data-mode="stage" data-scene="setup" style="display:none;">
+                <div class="deliverable-row"><span>机器人主卡</span><strong>权限检查结果卡 + 身份同步回执卡</strong></div>
+                <div class="deliverable-row"><span>自建应用成品</span><strong>成员映射页、权限矩阵页、同步日志页</strong></div>
+              </div>
+              <div class="scene-view" data-mode="stage" data-scene="product" style="display:none;">
+                <div class="deliverable-row"><span>机器人主卡</span><strong>产品初始化草稿卡 + 模块确认卡</strong></div>
+                <div class="deliverable-row"><span>自建应用成品</span><strong>产品初始化确认页，支持产品名、模块树、负责人编辑</strong></div>
+              </div>
+              <div class="scene-view" data-mode="stage" data-scene="review">
+                <div class="deliverable-row"><span>机器人主卡</span><strong>需求创建结果卡 + 负责人确认卡</strong></div>
+                <div class="deliverable-row"><span>自建应用成品</span><strong>需求详情页，支持补描述、负责人和优先级</strong></div>
+              </div>
+              <div class="scene-view" data-mode="stage" data-scene="project" style="display:none;">
+                <div class="deliverable-row"><span>机器人主卡</span><strong>项目准备清单卡 + 执行缺口提示卡</strong></div>
+                <div class="deliverable-row"><span>自建应用成品</span><strong>执行规划台，承接团队、周期、需求挂接和缺口修正</strong></div>
+              </div>
+              <div class="scene-view" data-mode="stage" data-scene="dev">
+                <div class="deliverable-row"><span>机器人主卡</span><strong>我的任务卡 + 开始/完成确认卡</strong></div>
+                <div class="deliverable-row"><span>自建应用成品</span><strong>任务详情页、自测回填页、工时补录页</strong></div>
+              </div>
+              <div class="scene-view" data-mode="stage" data-scene="test">
+                <div class="deliverable-row"><span>机器人主卡</span><strong>提测确认卡 + 测试结果卡</strong></div>
+                <div class="deliverable-row"><span>自建应用成品</span><strong>测试结果页，支持退回原因和最小 Bug 挂载</strong></div>
+              </div>
+              <div class="scene-view" data-mode="stage" data-scene="release" style="display:none;">
+                <div class="deliverable-row"><span>机器人主卡</span><strong>上线检查卡 + 发布确认卡</strong></div>
+                <div class="deliverable-row"><span>自建应用成品</span><strong>发布详情页、变更清单页、回滚方案页</strong></div>
+              </div>
+              <div class="scene-view" data-mode="stage" data-scene="accept">
+                <div class="deliverable-row"><span>机器人主卡</span><strong>关闭前摘要卡 + 关闭确认卡</strong></div>
+                <div class="deliverable-row"><span>自建应用成品</span><strong>关闭确认页，支持查看任务、测试结论和遗留说明</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="product-manager">
+                <div class="deliverable-row"><span>角色主成品</span><strong>需求创建页 + 需求详情页 + 关闭确认页</strong></div>
+                <div class="deliverable-row"><span>评审重点</span><strong>看产品经理是否能快速发起需求，并推动它从创建走到关闭</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="product-manager" data-role-scene="demand">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>需求创建页</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>标题、描述、产品/模块、优先级、负责人、进入开发确认</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="product-manager" data-role-scene="acceptance">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>关闭确认页</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>需求状态、测试结论、遗留说明、关闭建议</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="developer">
+                <div class="deliverable-row"><span>角色主成品</span><strong>研发工作台：首页默认展示我的任务、我的 Bug、待确认动作</strong></div>
+                <div class="deliverable-row"><span>评审重点</span><strong>看研发能否少跳转完成高频动作，把复杂说明留在详情页</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="developer" data-role-scene="task">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>任务详情页 + 开始/完成确认卡</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>任务 ID、剩余工时、自测说明、确认记录</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="developer" data-role-scene="bugfix" style="display:none;">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>我的 Bug 列表页 + Bug 回填页</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>严重级别、当前状态、解决方案、待验证结果</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="tester" style="display:none;">
+                <div class="deliverable-row"><span>角色主成品</span><strong>测试工作台：首页默认展示准出状态、阻塞项、待回归项</strong></div>
+                <div class="deliverable-row"><span>评审重点</span><strong>看测试角色是否能快速给出结论，并把证据沉淀到应用页</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="tester" data-role-scene="execute">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>测试单摘要页 + Bug 创建页</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>测试范围、失败项、复现步骤、附件、环境信息</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="tester" data-role-scene="readiness" style="display:none;">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>准出摘要页 + 完整测试报告页</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>阻断 Bug、未回归项、发布说明缺口、准出结论</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="manager" style="display:none;">
+                <div class="deliverable-row"><span>角色主成品</span><strong>项目驾驶舱：首页默认展示准备度、完成率、上线条件</strong></div>
+                <div class="deliverable-row"><span>评审重点</span><strong>看管理视角是否能快速判断“能否进入下一阶段”</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="manager" data-role-scene="project-view" style="display:none;">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>项目推进看板</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>准备度、逾期任务、责任人、阶段风险</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="manager" data-role-scene="release-view" style="display:none;">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>上线检查页 + 关闭项清单页</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>回滚方案、发布确认、验收结论、关闭动作</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="collaboration">
+                <div class="deliverable-row"><span>角色主成品</span><strong>跨角色链路板：需求草案 -> 任务 -> 提测 -> 准出 -> 发布 -> 验收</strong></div>
+                <div class="deliverable-row"><span>评审重点</span><strong>看交接物是否连续、责任是否明确、上下文是否不断层</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="collaboration" data-role-scene="handoff-chain" style="display:none;">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>角色接力链路板</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>交接对象、输入输出、下一角色入口、阻塞项</strong></div>
+              </div>
+              <div class="scene-view" data-mode="role" data-role="collaboration" data-role-scene="close-loop" style="display:none;">
+                <div class="deliverable-row"><span>角色子场景成品</span><strong>上线闭环板 + 关闭回执页</strong></div>
+                <div class="deliverable-row"><span>重点字段</span><strong>准出结果、发布结果、验收结果、关闭记录、遗留问题</strong></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h4>通用卡片设计基线</h4>
+            <div class="section-grid">
+              <div class="spec-card">
+                <h5>结果卡</h5>
+                <ul>
+                  <li>第一屏先给结论，不让用户再读一遍解释。</li>
+                  <li>必须显示对象 ID、状态、归属上下文。</li>
+                  <li>底部最多保留 2~3 个主动作，避免卡片膨胀。</li>
+                </ul>
+              </div>
+              <div class="spec-card">
+                <h5>确认卡</h5>
+                <ul>
+                  <li>当前状态、目标状态、风险影响要并列展示。</li>
+                  <li>确认按钮必须显著高于取消按钮。</li>
+                  <li>卡片里直接提示有效时间和审计记录。</li>
+                </ul>
+              </div>
+              <div class="spec-card">
+                <h5>候选选择卡</h5>
+                <ul>
+                  <li>不直接猜测同名对象，统一走候选卡。</li>
+                  <li>用编号 + 产品/执行上下文帮助快速区分。</li>
+                  <li>移动端优先数字化选择，降低输入成本。</li>
+                </ul>
+              </div>
+              <div class="spec-card">
+                <h5>失败卡</h5>
+                <ul>
+                  <li>不要只说失败，要给出具体原因和恢复动作。</li>
+                  <li>优先提供“打开应用”“查看帮助”等下一步。</li>
+                  <li>权限问题和系统问题在视觉和文案上要区分开。</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h4 id="workbenchTitle">当前场景应用成品</h4>
+
+            <div class="desktop-preview scene-view" data-mode="stage" data-scene="setup" style="display:none;">
+              <div class="workbench">
+                <div class="workbench-head"><div><h5>身份与权限工作台</h5><p class="card-subtitle" style="margin:6px 0 0;">先把映射和权限问题处理干净，再进入业务流程</p></div><span class="tag green">准备页</span></div>
+                <div class="metrics">
+                  <div class="metric"><div class="metric-label">待绑定成员</div><div class="metric-value">2</div></div>
+                  <div class="metric"><div class="metric-label">缺失权限</div><div class="metric-value">3</div></div>
+                  <div class="metric"><div class="metric-label">最近同步</div><div class="metric-value" style="font-size:18px;line-height:1.3;">09:28</div></div>
+                  <div class="metric"><div class="metric-label">状态</div><div class="metric-value" style="font-size:18px;line-height:1.3;">待处理</div></div>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-item"><div><div class="item-title">张三未绑定禅道账号</div><div class="item-meta"><span>研发角色 · 需处理</span></div></div><span class="tag red">阻塞</span></div>
+                  <div class="timeline-item"><div><div class="item-title">测试负责人缺“创建 Bug”权限</div><div class="item-meta"><span>测试角色 · 需授权</span></div></div><span class="tag orange">待修复</span></div>
+                </div>
+              </div>
+              <div class="bug-form">
+                <div class="form-head"><div><h5>成员映射详情</h5><p class="card-subtitle" style="margin:6px 0 0;">查看当前企微身份、禅道账号和角色权限</p></div><span class="tag blue">映射</span></div>
+                <div class="field-grid">
+                  <div class="field"><label>企微用户</label><div class="input">张三 / wxid_zhangsan</div></div>
+                  <div class="field"><label>禅道账号</label><div class="input">暂未绑定</div></div>
+                  <div class="field"><label>建议处理</label><div class="textarea">先完成账号映射，再补“执行任务、创建 Bug”权限。</div></div>
+                  <div class="field"><label>操作日志</label><div class="upload">09:15 自动同步失败，原因：未匹配到禅道用户名</div></div>
+                </div>
+                <div class="form-actions"><button class="btn btn-primary">去绑定</button><button class="btn btn-secondary">同步权限</button></div>
+              </div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="stage" data-scene="product" style="display:none;">
+              <div class="workbench">
+                <div class="workbench-head"><div><h5>产品初始化确认页</h5><p class="card-subtitle" style="margin:6px 0 0;">先确认产品、模块和归属，再创建正式产品对象</p></div><span class="tag green">初始化</span></div>
+                <div class="metrics">
+                  <div class="metric"><div class="metric-label">产品草案</div><div class="metric-value">1</div></div>
+                  <div class="metric"><div class="metric-label">模块草案</div><div class="metric-value">3</div></div>
+                  <div class="metric"><div class="metric-label">负责人</div><div class="metric-value" style="font-size:18px;line-height:1.3;">待确认</div></div>
+                  <div class="metric"><div class="metric-label">冲突</div><div class="metric-value">0</div></div>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-item"><div><div class="item-title">统一支付中台</div><div class="item-meta"><span>产品线：支付业务</span></div></div><span class="tag green">新建</span></div>
+                  <div class="timeline-item"><div><div class="item-title">模块：退款审核 / 退款补偿 / 风控拦截</div><div class="item-meta"><span>已从 PRD 草案抽取</span></div></div><span class="tag blue">草案</span></div>
+                </div>
+              </div>
+              <div class="bug-form">
+                <div class="form-head"><div><h5>产品信息</h5><p class="card-subtitle" style="margin:6px 0 0;">复杂字段统一在这里确认</p></div><span class="tag blue">确认</span></div>
+                <div class="field-grid">
+                  <div class="field"><label>产品名称</label><div class="input">统一支付中台</div></div>
+                  <div class="field"><label>产品线</label><div class="input">支付业务线</div></div>
+                  <div class="field"><label>模块树</label><div class="textarea">退款审核 / 退款补偿 / 风控拦截</div></div>
+                  <div class="field"><label>负责人</label><div class="input">王敏</div></div>
+                </div>
+                <div class="form-actions"><button class="btn btn-primary">确认创建产品</button><button class="btn btn-secondary">保存草稿</button></div>
+              </div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="stage" data-scene="review">
+              <div class="workbench">
+                <div class="workbench-head"><div><h5>PRD 草案工作台</h5><p class="card-subtitle" style="margin:6px 0 0;">PRD 解析后先看摘要，再进入批量确认</p></div><span class="tag green">草案</span></div>
+                <div class="metrics">
+                  <div class="metric"><div class="metric-label">产品</div><div class="metric-value">1</div></div>
+                  <div class="metric"><div class="metric-label">迭代</div><div class="metric-value">2</div></div>
+                  <div class="metric"><div class="metric-label">任务</div><div class="metric-value">11</div></div>
+                  <div class="metric"><div class="metric-label">风险项</div><div class="metric-value">2</div></div>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-item"><div><div class="item-title">退款系统 PRD v3</div><div class="item-meta"><span>09:36 解析完成</span></div></div><span class="tag orange">待确认</span></div>
+                  <div class="timeline-item"><div><div class="item-title">待确认风险：风控规则 owner</div><div class="item-meta"><span>会影响迭代 2 排期</span></div></div><span class="tag red">风险</span></div>
+                </div>
+              </div>
+              <div class="bug-form">
+                <div class="form-head"><div><h5>PRD 草案确认</h5><p class="card-subtitle" style="margin:6px 0 0;">这里完成产品、迭代和任务草案的复杂确认</p></div><span class="tag blue">确认页</span></div>
+                <div class="field-grid">
+                  <div class="field"><label>draftId</label><div class="input">prd_draft_20260326_001</div></div>
+                  <div class="field"><label>来源 PRD</label><div class="input">退款系统 PRD v3</div></div>
+                  <div class="field"><label>草案状态</label><div class="input">待确认，可写入禅道</div></div>
+                  <div class="field"><label>迭代规划</label><div class="input">迭代 1：审核主流程 / 迭代 2：补偿与联调</div></div>
+                  <div class="field"><label>任务草案</label><div class="textarea">前端开发：退款审核页；后端开发：风控拦截接口；联调：回调与补偿链路；测试支持：审核主流程用例...</div></div>
+                  <div class="field"><label>评审人</label><div class="input">产品负责人 / 研发负责人 / 测试负责人</div></div>
+                  <div class="field"><label>批量编辑能力</label><div class="input">支持批量改负责人 / 批量设迭代 / 批量设优先级</div></div>
+                  <div class="field"><label>校验提示</label><div class="upload">负责人已映射，待确认风控规则 owner 与迭代 2 截止时间</div></div>
+                </div>
+                <div class="form-actions"><button class="btn btn-primary">确认创建</button><button class="btn btn-secondary">重新拆分</button></div>
+              </div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="stage" data-scene="project" style="display:none;">
+              <div class="workbench">
+                <div class="workbench-head"><div><h5>执行规划台</h5><p class="card-subtitle" style="margin:6px 0 0;">把团队、周期、需求挂接和缺口问题放到同一屏</p></div><span class="tag green">规划</span></div>
+                <div class="metrics">
+                  <div class="metric"><div class="metric-label">执行数</div><div class="metric-value">2</div></div>
+                  <div class="metric"><div class="metric-label">待挂接需求</div><div class="metric-value">1</div></div>
+                  <div class="metric"><div class="metric-label">团队缺口</div><div class="metric-value">1</div></div>
+                  <div class="metric"><div class="metric-label">冲突</div><div class="metric-value">0</div></div>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-item"><div><div class="item-title">迭代 1：审核主流程</div><div class="item-meta"><span>03-28 ~ 04-10</span></div></div><span class="tag green">已排</span></div>
+                  <div class="timeline-item"><div><div class="item-title">缺少联调负责人</div><div class="item-meta"><span>阻塞回调链路任务</span></div></div><span class="tag orange">待补</span></div>
+                </div>
+              </div>
+              <div class="bug-form">
+                <div class="form-head"><div><h5>执行详情</h5><p class="card-subtitle" style="margin:6px 0 0;">处理团队和周期类复杂信息</p></div><span class="tag blue">执行</span></div>
+                <div class="field-grid">
+                  <div class="field"><label>执行名称</label><div class="input">迭代 1：审核主流程</div></div>
+                  <div class="field"><label>起止时间</label><div class="input">2026-03-28 ~ 2026-04-10</div></div>
+                  <div class="field"><label>团队成员</label><div class="textarea">前端：张三 / 后端：李四 / 测试：王五 / 联调：待指定</div></div>
+                  <div class="field"><label>挂接需求</label><div class="upload">需求 201：退款审核增加风控拦截</div></div>
+                </div>
+                <div class="form-actions"><button class="btn btn-primary">保存执行规划</button><button class="btn btn-secondary">补团队成员</button></div>
+              </div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="stage" data-scene="dev">
+              <div class="workbench">
+                <div class="workbench-head"><div><h5>研发工作台</h5><p class="card-subtitle" style="margin:6px 0 0;">高频动作集中在我的任务、我的 Bug 和待确认动作</p></div><span class="tag green">首页</span></div>
+                <div class="metrics">
+                  <div class="metric"><div class="metric-label">我的任务</div><div class="metric-value">3</div></div>
+                  <div class="metric"><div class="metric-label">待确认动作</div><div class="metric-value">1</div></div>
+                  <div class="metric"><div class="metric-label">我的 Bug</div><div class="metric-value">2</div></div>
+                  <div class="metric"><div class="metric-label">逾期</div><div class="metric-value">1</div></div>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-item"><div><div class="item-title">任务 #33 前端开发：退款审核页</div><div class="item-meta"><span>剩余 2h</span></div></div><span class="tag blue">进行中</span></div>
+                  <div class="timeline-item"><div><div class="item-title">Bug #108 支付回调金额校验异常</div><div class="item-meta"><span>指派给我</span></div></div><span class="tag red">严重</span></div>
+                </div>
+              </div>
+              <div class="bug-form">
+                <div class="form-head"><div><h5>研发角色权限说明</h5><p class="card-subtitle" style="margin:6px 0 0;">当前工作台只显示研发可执行内容，不展示产品、测试、管理录入能力</p></div><span class="tag blue">权限范围</span></div>
+                <div class="field-grid">
+                  <div class="field"><label>可见内容</label><div class="textarea">我的任务、我的 Bug、待确认动作、工时补录、自测说明、完成确认</div></div>
+                  <div class="field"><label>隐藏内容</label><div class="textarea">PRD 草案编辑、评审发起、测试报告编辑、发布确认、关闭清单</div></div>
+                  <div class="field"><label>下一步</label><div class="upload">优先完成任务与 Bug，复杂说明在详情页补齐</div></div>
+                </div>
+                <div class="form-actions"><button class="btn btn-primary">查看任务详情</button><button class="btn btn-secondary">查看我的 Bug</button></div>
+              </div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="developer" data-role-scene="task">
+              <div class="workbench"><div class="workbench-head"><div><h5>任务详情页</h5><p class="card-subtitle" style="margin:6px 0 0;">第一版只保留开始任务、完成任务和发起提测三个动作</p></div><span class="tag green">任务</span></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">#33 前端开发：退款审核拦截页</div><div class="item-meta"><span>执行 4 / 需求 201</span></div></div><span class="tag blue">进行中</span></div><div class="timeline-item"><div><div class="item-title">下一步：完成后发起提测</div><div class="item-meta"><span>当前责任人：张三</span></div></div><span class="tag orange">待处理</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>任务动作区</h5><p class="card-subtitle" style="margin:6px 0 0;">聊天里负责推进，复杂备注和附件再进详情补录</p></div><span class="tag blue">MVP</span></div><div class="field-grid"><div class="field"><label>可见内容</label><div class="textarea">任务状态、简单备注、完成确认、提测动作</div></div><div class="field"><label>隐藏内容</label><div class="textarea">复杂工时体系、完整测试报告、发布确认、关闭动作</div></div><div class="field"><label>下一步</label><div class="upload">完成开发后直接发起提测</div></div></div><div class="form-actions"><button class="btn btn-primary">确认完成</button><button class="btn btn-secondary">发起提测</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="developer" data-role-scene="bugfix" style="display:none;">
+              <div class="workbench"><div class="workbench-head"><div><h5>我的 Bug 列表</h5><p class="card-subtitle" style="margin:6px 0 0;">先看严重度和状态，再进入回填页</p></div><span class="tag green">Bug</span></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">Bug #108 支付回调金额校验异常</div><div class="item-meta"><span>激活 / 严重</span></div></div><span class="tag red">待修复</span></div><div class="timeline-item"><div><div class="item-title">Bug #112 审核意见为空时未拦截</div><div class="item-meta"><span>激活 / 一般</span></div></div><span class="tag orange">处理中</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>Bug 子场景权限说明</h5><p class="card-subtitle" style="margin:6px 0 0;">当前只开放修复回填相关内容，不展示测试和管理侧动作</p></div><span class="tag blue">权限范围</span></div><div class="field-grid"><div class="field"><label>可见内容</label><div class="textarea">Bug 严重级别、当前状态、解决方案、验证建议、附件</div></div><div class="field"><label>隐藏内容</label><div class="textarea">测试执行结果编辑、准出结论、发布确认、产品验收关闭</div></div><div class="field"><label>下一步</label><div class="upload">回填解决方案后，进入待验证状态</div></div></div><div class="form-actions"><button class="btn btn-primary">标记已解决</button><button class="btn btn-secondary">查看详情</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="stage" data-scene="test">
+              <div class="workbench">
+                <div class="workbench-head"><div><h5>测试结果页</h5><p class="card-subtitle" style="margin:6px 0 0;">第一版只看通过或退回，以及最小问题说明</p></div><span class="tag green">测试</span></div>
+                <div class="metrics">
+                  <div class="metric"><div class="metric-label">待修复问题</div><div class="metric-value">1</div></div>
+                  <div class="metric"><div class="metric-label">待回归项</div><div class="metric-value">2</div></div>
+                  <div class="metric"><div class="metric-label">当前结论</div><div class="metric-value" style="font-size:18px;line-height:1.3;">退回研发</div></div>
+                  <div class="metric"><div class="metric-label">下步动作</div><div class="metric-value" style="font-size:18px;line-height:1.3;">重新提测</div></div>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-item"><div><div class="item-title">问题 1：支付回调金额校验异常</div><div class="item-meta"><span>需研发修复后再次提测</span></div></div><span class="tag red">退回</span></div>
+                  <div class="timeline-item"><div><div class="item-title">问题 2：退款补偿流程待回归</div><div class="item-meta"><span>与修复后一并复测</span></div></div><span class="tag orange">待回归</span></div>
+                </div>
+              </div>
+              <div class="bug-form">
+                <div class="form-head"><div><h5>测试动作区</h5><p class="card-subtitle" style="margin:6px 0 0;">第一版只保留给结论和补最小问题说明，不扩展完整测试体系</p></div><span class="tag blue">MVP</span></div>
+                <div class="field-grid">
+                  <div class="field"><label>可见内容</label><div class="textarea">测试结论、问题摘要、退回研发、重新接收提测</div></div>
+                  <div class="field"><label>隐藏内容</label><div class="textarea">完整用例体系、测试报告编辑、发布确认、关闭动作</div></div>
+                  <div class="field"><label>下一步</label><div class="upload">给出通过或退回，推动需求继续往前走</div></div>
+                </div>
+                <div class="form-actions"><button class="btn btn-primary">退回研发</button><button class="btn btn-secondary">标记通过</button></div>
+              </div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="tester" data-role-scene="execute">
+              <div class="workbench"><div class="workbench-head"><div><h5>测试结果页</h5><p class="card-subtitle" style="margin:6px 0 0;">聚焦通过或退回，以及当前最关键的问题说明</p></div><span class="tag green">测试结果</span></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">本次提测：退款审核主流程</div><div class="item-meta"><span>当前结论：退回研发</span></div></div><span class="tag orange">处理中</span></div><div class="timeline-item"><div><div class="item-title">问题摘要 2 条</div><div class="item-meta"><span>可补最小问题说明</span></div></div><span class="tag orange">待处理</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>测试结论动作区</h5><p class="card-subtitle" style="margin:6px 0 0;">当前只展示测试结论和问题说明所需内容</p></div><span class="tag blue">MVP</span></div><div class="field-grid"><div class="field"><label>可见内容</label><div class="textarea">测试结论、问题摘要、退回说明、重新接收提测</div></div><div class="field"><label>隐藏内容</label><div class="textarea">完整测试报告、发布执行、验收关闭、复杂附件结构</div></div><div class="field"><label>下一步</label><div class="upload">给出通过或退回，让研发继续推进</div></div></div><div class="form-actions"><button class="btn btn-primary">退回研发</button><button class="btn btn-secondary">标记通过</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="tester" data-role-scene="readiness" style="display:none;">
+              <div class="workbench"><div class="workbench-head"><div><h5>准出摘要页</h5><p class="card-subtitle" style="margin:6px 0 0;">第一屏只给上线决策最重要的信息</p></div><span class="tag orange">不允许</span></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">阻断 Bug 1 条未清零</div><div class="item-meta"><span>Bug #108</span></div></div><span class="tag red">阻断</span></div><div class="timeline-item"><div><div class="item-title">回滚方案缺失</div><div class="item-meta"><span>发布说明不完整</span></div></div><span class="tag orange">缺口</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>准出子场景权限说明</h5><p class="card-subtitle" style="margin:6px 0 0;">当前只保留准出判断和报告查看，不承担发布确认和关闭动作</p></div><span class="tag blue">权限范围</span></div><div class="field-grid"><div class="field"><label>可见内容</label><div class="textarea">准出结论、阻断项、待回归项、建议动作、报告导出</div></div><div class="field"><label>隐藏内容</label><div class="textarea">发布执行录入、产品验收关闭、研发任务回填、PRD 草案编辑</div></div><div class="field"><label>下一步</label><div class="upload">输出测试结论，交给管理和发布角色继续判断</div></div></div><div class="form-actions"><button class="btn btn-primary">导出报告</button><button class="btn btn-secondary">查看 Bug 列表</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="manager" style="display:none;">
+              <div class="workbench"><div class="workbench-head"><div><h5>项目驾驶舱</h5><p class="card-subtitle" style="margin:6px 0 0;">帮助管理者判断是否能进入下一阶段</p></div><span class="tag green">驾驶舱</span></div><div class="metrics"><div class="metric"><div class="metric-label">准备度</div><div class="metric-value" style="font-size:18px;line-height:1.3;">82%</div></div><div class="metric"><div class="metric-label">任务完成率</div><div class="metric-value" style="font-size:18px;line-height:1.3;">75%</div></div><div class="metric"><div class="metric-label">阻塞项</div><div class="metric-value">2</div></div><div class="metric"><div class="metric-label">上线条件</div><div class="metric-value" style="font-size:18px;line-height:1.3;">待确认</div></div></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">研发任务完成率低于预期</div><div class="item-meta"><span>逾期 1 条</span></div></div><span class="tag orange">风险</span></div><div class="timeline-item"><div><div class="item-title">测试准出未通过</div><div class="item-meta"><span>阻断 Bug 未清零</span></div></div><span class="tag red">阻断</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>管理角色权限说明</h5><p class="card-subtitle" style="margin:6px 0 0;">当前工作台只保留管理判断与确认能力，不展示对象级录入表单</p></div><span class="tag blue">权限范围</span></div><div class="field-grid"><div class="field"><label>可见内容</label><div class="textarea">准备度、完成率、阻塞项、上线条件、关闭清单、风险与建议动作</div></div><div class="field"><label>隐藏内容</label><div class="textarea">PRD 草案编辑、研发工时录入、Bug 复现填写、测试报告编辑、发布执行细节录入</div></div><div class="field"><label>下一步</label><div class="upload">根据阻塞项和上线条件决定是否进入下一阶段</div></div></div><div class="form-actions"><button class="btn btn-primary">查看项目推进</button><button class="btn btn-secondary">查看上线条件</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="manager" data-role-scene="project-view" style="display:none;">
+              <div class="workbench"><div class="workbench-head"><div><h5>项目推进看板</h5><p class="card-subtitle" style="margin:6px 0 0;">聚焦准备度、责任人和风险项</p></div><span class="tag green">推进</span></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">产品与迭代已就绪</div><div class="item-meta"><span>需求、执行已挂接</span></div></div><span class="tag green">完成</span></div><div class="timeline-item"><div><div class="item-title">联调负责人待补</div><div class="item-meta"><span>影响回调链路</span></div></div><span class="tag orange">待补</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>项目推进子场景权限说明</h5><p class="card-subtitle" style="margin:6px 0 0;">当前只保留推进判断和催办能力，不展示对象录入</p></div><span class="tag blue">权限范围</span></div><div class="field-grid"><div class="field"><label>可见内容</label><div class="textarea">准备度、责任人、风险说明、催办、查看任务</div></div><div class="field"><label>隐藏内容</label><div class="textarea">PRD 草案编辑、工时录入、Bug 复现填写、测试报告编辑、发布执行表单</div></div><div class="field"><label>下一步</label><div class="upload">基于风险项催办责任人，推动阶段继续前进</div></div></div><div class="form-actions"><button class="btn btn-primary">催办负责人</button><button class="btn btn-secondary">查看任务</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="manager" data-role-scene="release-view" style="display:none;">
+              <div class="workbench"><div class="workbench-head"><div><h5>上线检查页</h5><p class="card-subtitle" style="margin:6px 0 0;">先看能否发布，再看如何关闭</p></div><span class="tag orange">待确认</span></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">发布说明未补全</div><div class="item-meta"><span>缺回滚方案</span></div></div><span class="tag orange">缺口</span></div><div class="timeline-item"><div><div class="item-title">测试阻断未清零</div><div class="item-meta"><span>Bug #108</span></div></div><span class="tag red">阻断</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>上线关闭子场景权限说明</h5><p class="card-subtitle" style="margin:6px 0 0;">当前只保留上线条件判断和关闭检查，不展示执行录入</p></div><span class="tag blue">权限范围</span></div><div class="field-grid"><div class="field"><label>可见内容</label><div class="textarea">上线条件、关闭对象、关闭前条件、确认发布、查看验收单</div></div><div class="field"><label>隐藏内容</label><div class="textarea">发布执行细节录入、测试报告编辑、研发回填、产品 PRD 草案编辑</div></div><div class="field"><label>下一步</label><div class="upload">确认上线条件满足后，再决定发布与关闭动作</div></div></div><div class="form-actions"><button class="btn btn-primary">确认发布</button><button class="btn btn-secondary">查看验收单</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="collaboration">
+              <div class="workbench"><div class="workbench-head"><div><h5>跨角色闭环板</h5><p class="card-subtitle" style="margin:6px 0 0;">只保留一条最短链路：需求、任务、测试结果、关闭</p></div><span class="tag green">闭环</span></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">1. 产品创建需求</div><div class="item-meta"><span>输出需求卡和负责人</span></div></div><span class="tag blue">起点</span></div><div class="timeline-item"><div><div class="item-title">2. 研发完成任务并提测</div><div class="item-meta"><span>输出提测结果</span></div></div><span class="tag green">推进</span></div><div class="timeline-item"><div><div class="item-title">3. 测试给结论，产品确认关闭</div><div class="item-meta"><span>输出最终状态</span></div></div><span class="tag orange">收口</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>闭环说明</h5><p class="card-subtitle" style="margin:6px 0 0;">当前只强调卡点和下一责任人，不展开复杂交接体系</p></div><span class="tag blue">MVP</span></div><div class="field-grid"><div class="field"><label>当前交接物</label><div class="input">需求卡 / 任务状态 / 测试结果 / 关闭确认</div></div><div class="field"><label>卡点说明</label><div class="textarea">任何一步没有结论，下一角色都无法继续推进。</div></div></div><div class="form-actions"><button class="btn btn-primary">查看当前卡点</button><button class="btn btn-secondary">查看责任人</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="collaboration" data-role-scene="handoff-chain" style="display:none;">
+              <div class="workbench"><div class="workbench-head"><div><h5>角色接力链路板</h5><p class="card-subtitle" style="margin:6px 0 0;">逐段展示输入、输出和责任人</p></div><span class="tag green">接力</span></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">产品 -> 管理</div><div class="item-meta"><span>需求草案 / 评审结论</span></div></div><span class="tag blue">交接</span></div><div class="timeline-item"><div><div class="item-title">管理 -> 研发</div><div class="item-meta"><span>执行规划 / 任务拆分</span></div></div><span class="tag blue">交接</span></div><div class="timeline-item"><div><div class="item-title">研发 -> 测试</div><div class="item-meta"><span>提测输入 / 自测结果</span></div></div><span class="tag blue">交接</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>接力子场景权限说明</h5><p class="card-subtitle" style="margin:6px 0 0;">跨角色页只说明交接物，不承接任何单角色录入动作</p></div><span class="tag blue">权限范围</span></div><div class="field-grid"><div class="field"><label>可见内容</label><div class="textarea">交接对象、输入输出、字段规范、角色责任、阻塞提示</div></div><div class="field"><label>隐藏内容</label><div class="textarea">产品草案编辑、任务回填、Bug 创建表单、发布确认录入</div></div><div class="field"><label>下一步</label><div class="upload">根据交接字段检查上下文是否完整，再转给下一个角色</div></div></div><div class="form-actions"><button class="btn btn-primary">查看字段规范</button><button class="btn btn-secondary">查看角色责任</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="stage" data-scene="accept"></div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="product-manager">
+              <div class="workbench">
+                <div class="workbench-head"><div><h5>产品经理工作台</h5><p class="card-subtitle" style="margin:6px 0 0;">第一版只保留创建需求、看状态、确认关闭三个入口</p></div><span class="tag green">产品角色</span></div>
+                <div class="metrics">
+                  <div class="metric"><div class="metric-label">待创建</div><div class="metric-value">1</div></div>
+                  <div class="metric"><div class="metric-label">开发中</div><div class="metric-value">2</div></div>
+                  <div class="metric"><div class="metric-label">待关闭</div><div class="metric-value">1</div></div>
+                  <div class="metric"><div class="metric-label">遗留问题</div><div class="metric-value">1</div></div>
+                </div>
+                <div class="action-grid">
+                  <div class="action-tile"><strong>创建需求</strong><span>补齐标题、描述、负责人</span></div>
+                  <div class="action-tile"><strong>查看状态</strong><span>看当前卡在哪个环节</span></div>
+                  <div class="action-tile"><strong>催办下一步</strong><span>提醒当前责任人继续推进</span></div>
+                  <div class="action-tile"><strong>确认关闭</strong><span>核对测试结果和遗留说明</span></div>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-item"><div><div class="item-title">需求 201 / 退款审核增加风控拦截</div><div class="item-meta"><span>当前在研发执行中</span></div></div><span class="tag blue">开发中</span></div>
+                  <div class="timeline-item"><div><div class="item-title">需求 188 / 待关闭</div><div class="item-meta"><span>测试已通过，等待产品确认</span></div></div><span class="tag green">待关闭</span></div>
+                </div>
+              </div>
+              <div class="bug-form">
+                <div class="form-head"><div><h5>产品经理动作区</h5><p class="card-subtitle" style="margin:6px 0 0;">按角色只保留最短闭环里需要的动作</p></div><span class="tag blue">MVP</span></div>
+                <div class="field-grid">
+                  <div class="field"><label>可见内容</label><div class="textarea">创建需求、查看状态、催办、关闭确认</div></div>
+                  <div class="field"><label>隐藏内容</label><div class="textarea">复杂 PRD 拆解、完整评审编排、测试报告编辑、发布执行录入</div></div>
+                  <div class="field"><label>下一步</label><div class="upload">先把一条需求从创建推进到关闭，再逐步补完整能力</div></div>
+                </div>
+                <div class="form-actions"><button class="btn btn-primary">创建需求</button><button class="btn btn-secondary">查看待关闭</button></div>
+              </div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="product-manager" data-role-scene="demand">
+              <div class="workbench"><div class="workbench-head"><div><h5>需求创建页</h5><p class="card-subtitle" style="margin:6px 0 0;">产品角色只保留最小字段创建，不把复杂规划塞进第一版</p></div><span class="tag green">提需求</span></div><div class="metrics"><div class="metric"><div class="metric-label">待创建</div><div class="metric-value">1</div></div><div class="metric"><div class="metric-label">负责人</div><div class="metric-value" style="font-size:18px;line-height:1.3;">王敏</div></div><div class="metric"><div class="metric-label">优先级</div><div class="metric-value" style="font-size:18px;line-height:1.3;">P1</div></div><div class="metric"><div class="metric-label">状态</div><div class="metric-value" style="font-size:18px;line-height:1.3;">待确认</div></div></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">需求：退款审核增加风控拦截</div><div class="item-meta"><span>产品 / 模块：统一支付中台 / 退款审核</span></div></div><span class="tag orange">待创建</span></div><div class="timeline-item"><div><div class="item-title">下一步：负责人确认进入开发</div><div class="item-meta"><span>创建后自动进入推进链路</span></div></div><span class="tag blue">下一步</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>需求详情补录</h5><p class="card-subtitle" style="margin:6px 0 0;">当前角色只展示标题、描述、负责人、优先级等最小字段</p></div><span class="tag blue">MVP</span></div><div class="field-grid"><div class="field"><label>可编辑字段</label><div class="textarea">标题、描述、产品/模块、负责人、优先级</div></div><div class="field"><label>隐藏字段</label><div class="input">复杂 PRD 结构、批量任务拆分、正式评审字段</div></div><div class="field"><label>提交动作</label><div class="upload">确认创建需求并进入后续推进</div></div></div><div class="form-actions"><button class="btn btn-primary">确认创建</button><button class="btn btn-secondary">查看状态</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="product-manager" data-role-scene="acceptance">
+              <div class="workbench"><div class="workbench-head"><div><h5>关闭确认页</h5><p class="card-subtitle" style="margin:6px 0 0;">产品角色只看是否满足关闭条件，不展开复杂验收流程</p></div><span class="tag green">关闭</span></div><div class="metrics"><div class="metric"><div class="metric-label">需求状态</div><div class="metric-value" style="font-size:18px;line-height:1.3;">测试通过</div></div><div class="metric"><div class="metric-label">研发任务</div><div class="metric-value" style="font-size:18px;line-height:1.3;">已完成</div></div><div class="metric"><div class="metric-label">遗留项</div><div class="metric-value">1</div></div><div class="metric"><div class="metric-label">关闭建议</div><div class="metric-value" style="font-size:18px;line-height:1.3;">可关闭</div></div></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">测试已通过</div><div class="item-meta"><span>当前没有阻塞问题</span></div></div><span class="tag green">通过</span></div><div class="timeline-item"><div><div class="item-title">遗留说明：补偿链路监控</div><div class="item-meta"><span>已记录，后续单独跟进</span></div></div><span class="tag orange">留档</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>关闭动作区</h5><p class="card-subtitle" style="margin:6px 0 0;">只展示产品角色有权限确认的最小字段</p></div><span class="tag blue">MVP</span></div><div class="field-grid"><div class="field"><label>可见字段</label><div class="textarea">需求状态、测试结果、遗留说明、关闭建议</div></div><div class="field"><label>隐藏字段</label><div class="input">发布执行明细、完整测试报告、研发工时录入</div></div></div><div class="form-actions"><button class="btn btn-primary">确认关闭</button><button class="btn btn-secondary">查看遗留项</button></div></div>
+            </div>
+
+            <div class="desktop-preview scene-view" data-mode="role" data-role="collaboration" data-role-scene="close-loop" style="display:none;">
+              <div class="workbench"><div class="workbench-head"><div><h5>上线闭环板</h5><p class="card-subtitle" style="margin:6px 0 0;">发布成功不是结束，验收和关闭事项才是最后收口</p></div><span class="tag orange">闭环</span></div><div class="timeline"><div class="timeline-item"><div><div class="item-title">测试输出：允许 / 不允许上线</div><div class="item-meta"><span>准出结果</span></div></div><span class="tag blue">输入</span></div><div class="timeline-item"><div><div class="item-title">发布输出：结果 + 回滚方案</div><div class="item-meta"><span>上线记录</span></div></div><span class="tag blue">输入</span></div><div class="timeline-item"><div><div class="item-title">验收输出：通过 / 驳回整改</div><div class="item-meta"><span>业务确认</span></div></div><span class="tag orange">决策</span></div></div></div>
+              <div class="bug-form"><div class="form-head"><div><h5>闭环子场景权限说明</h5><p class="card-subtitle" style="margin:6px 0 0;">跨角色闭环页只展示最终结果，不提供任何角色专属录入入口</p></div><span class="tag blue">权限范围</span></div><div class="field-grid"><div class="field"><label>可见内容</label><div class="textarea">准出结果、发布结果、验收结果、关闭对象、遗留问题留档</div></div><div class="field"><label>隐藏内容</label><div class="textarea">PRD 草案编辑、任务回填、Bug 填写、发布执行录入</div></div><div class="field"><label>下一步</label><div class="upload">确认关闭或查看验收单，不在此页继续业务录入</div></div></div><div class="form-actions"><button class="btn btn-primary">确认关闭</button><button class="btn btn-secondary">查看验收单</button></div></div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h4>实现意图</h4>
+            <div class="section-grid">
+              <div class="spec-card">
+                <h5>什么保留在企微卡片里</h5>
+                <ul>
+                  <li>高频查询</li>
+                  <li>轻量创建</li>
+                  <li>状态流转确认</li>
+                  <li>测试结果和关闭确认</li>
+                  <li>错误提示和下一步引导</li>
+                </ul>
+              </div>
+              <div class="spec-card">
+                <h5>什么跳到自建应用</h5>
+                <ul>
+                  <li>长文本录入</li>
+                  <li>多字段复杂表单</li>
+                  <li>复杂需求字段补录</li>
+                  <li>附件上传</li>
+                  <li>审计查看和历史记录</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var modeButtons = Array.prototype.slice.call(document.querySelectorAll('.mode-btn'));
+      var modePanels = Array.prototype.slice.call(document.querySelectorAll('.mode-panel'));
+      var stageTabs = Array.prototype.slice.call(document.querySelectorAll('.scene-tab[data-scene]'));
+      var roleTabs = Array.prototype.slice.call(document.querySelectorAll('.scene-tab[data-role]'));
+      var roleSubTabs = Array.prototype.slice.call(document.querySelectorAll('.subscene-tab'));
+      var phoneScenes = Array.prototype.slice.call(document.querySelectorAll('.phone-scene'));
+      var specScenes = Array.prototype.slice.call(document.querySelectorAll('.scene-view'));
+      var scenePill = document.getElementById('scenePill');
+      var workbenchTitle = document.getElementById('workbenchTitle');
+      var deliverableTitle = document.getElementById('deliverableTitle');
+      var roleIndicator = document.getElementById('roleIndicator');
+      var roleIndicatorText = document.getElementById('roleIndicatorText');
+      var currentMode = 'stage';
+      var currentStage = 'review';
+      var currentRole = 'product-manager';
+      var currentRoleScene = {
+        'product-manager': 'overview',
+        developer: 'task',
+        tester: 'execute',
+        collaboration: 'overview'
+      };
+      var labels = {
+        stage: {
+          setup: '当前场景：系统准备与权限校验',
+          product: '当前场景：产品、模块与业务归属建立',
+          review: '当前场景：需求创建与进入开发',
+          project: '当前场景：项目、团队、执行与需求关联',
+          dev: '当前场景：研发任务执行与提测',
+          test: '当前场景：测试结果与退回处理',
+          release: '当前场景：发布单、上线检查与发布确认',
+          accept: '当前场景：关闭确认与流程闭环'
+        },
+        role: {
+          'product-manager': '当前模式：产品经理如何发起并推进需求闭环',
+          developer: '当前模式：研发成员如何完成任务并发起提测',
+          tester: '当前模式：测试角色如何给出测试结论',
+          collaboration: '当前模式：跨角色如何完成最短交付闭环'
+        },
+        roleScene: {
+          'product-manager': {
+            overview: '当前模式：产品经理如何发起并跟进需求',
+            demand: '当前模式：产品经理如何快速创建需求',
+            acceptance: '当前模式：产品经理如何确认关闭'
+          },
+          developer: {
+            task: '当前模式：研发成员如何领取、完成任务并提测'
+          },
+          tester: {
+            execute: '当前模式：测试角色如何给出通过或退回结论'
+          },
+          collaboration: {
+            overview: '当前模式：跨角色如何完成需求到关闭的最短闭环'
+          }
+        }
+      };
+
+      function updatePill() {
+        if (!scenePill) return;
+        if (currentMode === 'stage') {
+          scenePill.textContent = labels.stage[currentStage];
+        } else {
+          scenePill.textContent = (labels.roleScene[currentRole] && labels.roleScene[currentRole][currentRoleScene[currentRole]]) || labels.role[currentRole];
+        }
+      }
+
+      function updateSectionTitles() {
+        if (currentMode === 'stage') {
+          if (deliverableTitle) deliverableTitle.textContent = '当前场景推荐成品';
+          if (workbenchTitle) workbenchTitle.textContent = '当前场景应用成品';
+          if (roleIndicator) roleIndicator.className = 'role-indicator';
+          return;
+        }
+
+        var roleTitles = {
+          'product-manager': '产品角色工作台',
+          developer: '研发角色工作台',
+          tester: '测试角色工作台',
+          collaboration: '跨角色闭环看板'
+        };
+
+        var roleNames = {
+          'product-manager': '产品经理',
+          developer: '研发',
+          tester: '测试',
+          collaboration: '跨角色协作'
+        };
+
+        var roleClasses = {
+          'product-manager': 'role-product',
+          developer: 'role-developer',
+          tester: 'role-tester',
+          collaboration: 'role-collaboration'
+        };
+
+        if (deliverableTitle) deliverableTitle.textContent = '当前角色推荐成品';
+        if (workbenchTitle) workbenchTitle.textContent = roleTitles[currentRole] || '当前角色工作台';
+        if (roleIndicator) roleIndicator.className = 'role-indicator active ' + (roleClasses[currentRole] || '');
+        if (roleIndicatorText) roleIndicatorText.textContent = '当前角色：' + (roleNames[currentRole] || currentRole);
+      }
+
+      function updateRoleWorkbenchThemes() {
+        var themeMap = {
+          'product-manager': 'role-theme-product',
+          developer: 'role-theme-developer',
+          tester: 'role-theme-tester',
+          collaboration: 'role-theme-collaboration'
+        };
+
+        specScenes.forEach(function (scene) {
+          if (!scene.classList.contains('desktop-preview')) return;
+          scene.classList.remove('role-theme-product', 'role-theme-developer', 'role-theme-tester', 'role-theme-manager', 'role-theme-collaboration');
+          if (scene.getAttribute('data-mode') !== 'role') return;
+          var role = scene.getAttribute('data-role');
+          var themeClass = themeMap[role];
+          if (themeClass) scene.classList.add(themeClass);
+        });
+      }
+
+      function syncRoleSubTabs() {
+        roleSubTabs.forEach(function (tab) {
+          var matchedRole = tab.getAttribute('data-role-target') === currentRole;
+          tab.classList.toggle('visible', matchedRole);
+          tab.classList.toggle('active', matchedRole && tab.getAttribute('data-role-scene') === currentRoleScene[currentRole]);
+        });
+      }
+
+      function setMode(mode) {
+        currentMode = mode;
+
+        modeButtons.forEach(function (btn) {
+          btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
+        });
+
+        modePanels.forEach(function (panel) {
+          panel.classList.toggle('active', panel.getAttribute('data-mode-panel') === mode);
+        });
+
+        phoneScenes.forEach(function (node) {
+          var nodeMode = node.getAttribute('data-mode') || 'stage';
+          var match = nodeMode === mode && ((mode === 'stage' && node.getAttribute('data-scene') === currentStage) || (mode === 'role' && node.getAttribute('data-role') === currentRole && node.getAttribute('data-role-scene') === currentRoleScene[currentRole]));
+          node.classList.toggle('active', match);
+        });
+
+        specScenes.forEach(function (node) {
+          var nodeMode = node.getAttribute('data-mode') || 'stage';
+          var roleScene = node.getAttribute('data-role-scene');
+          var match = nodeMode === mode && ((mode === 'stage' && node.getAttribute('data-scene') === currentStage) || (mode === 'role' && node.getAttribute('data-role') === currentRole && (!roleScene || roleScene === currentRoleScene[currentRole])));
+          node.classList.toggle('active', match);
+        });
+
+        syncRoleSubTabs();
+        updatePill();
+        updateSectionTitles();
+        updateRoleWorkbenchThemes();
+      }
+
+      function switchStage(scene) {
+        currentStage = scene;
+        stageTabs.forEach(function (tab) {
+          tab.classList.toggle('active', tab.getAttribute('data-scene') === scene);
+        });
+
+        setMode('stage');
+      }
+
+      function switchRole(role) {
+        currentRole = role;
+        roleTabs.forEach(function (tab) {
+          tab.classList.toggle('active', tab.getAttribute('data-role') === role);
+        });
+
+        setMode('role');
+      }
+
+      function switchRoleScene(role, roleScene) {
+        currentRole = role;
+        currentRoleScene[role] = roleScene;
+        roleTabs.forEach(function (tab) {
+          tab.classList.toggle('active', tab.getAttribute('data-role') === role);
+        });
+        setMode('role');
+      }
+
+      stageTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          switchStage(tab.getAttribute('data-scene'));
+        });
+      });
+
+      roleTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          switchRole(tab.getAttribute('data-role'));
+        });
+      });
+
+      roleSubTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          switchRoleScene(tab.getAttribute('data-role-target'), tab.getAttribute('data-role-scene'));
+        });
+      });
+
+      modeButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var mode = btn.getAttribute('data-mode');
+          setMode(mode);
+        });
+      });
+
+      updatePill();
+    })();
+  </script>
+</body>
+</html>
