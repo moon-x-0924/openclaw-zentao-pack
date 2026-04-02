@@ -20,3 +20,7 @@
 
 - `zentao-skill-shrimp/`
   禅道技能包维护虾，负责控制 skill agent 持续完善这个技能包。
+
+说明：
+
+- `backup-cleanup-shrimp` 与 `server-change-journal-shrimp` 已迁为 OpenClaw 全局维护虾，目录位于 `/root/.openclaw/workspace/maintainers/`

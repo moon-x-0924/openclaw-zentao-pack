@@ -18,7 +18,7 @@
 ## 常用命令
 
 - `npm run build`
-- `npm run get-my-tasks -- --userid admin`
+- `npm run query-my-tasks -- --userid admin`
 - `npm run wecom-tasks -- --userid admin`
 - `npm run wecom-callback -- --data-file examples/callbacks/tmp-callback-task.json`
 - `npm run wecom-contact-sync`
@@ -120,7 +120,7 @@ npm run build
 
 ```bash
 OPENCLAW_ZENTAO_CONFIG_PATH=/etc/openclaw/zentao.config.json npm run query-products
-OPENCLAW_ZENTAO_CONFIG_PATH=/etc/openclaw/zentao.config.json npm run get-my-tasks -- --userid admin
+OPENCLAW_ZENTAO_CONFIG_PATH=/etc/openclaw/zentao.config.json npm run query-my-tasks -- --userid admin
 ```
 
 如果你使用 systemd、supervisor 或其他托管方式启动服务，也要把环境变量写进服务配置，例如：

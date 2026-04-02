@@ -5,6 +5,11 @@
 当前在线目录：
 - `1.14.73.166` 生效目录：`/root/.openclaw/workspace/skills/openclaw-zentao-pack`
 
+变更日志分层：
+- 服务器总变更日志：`/root/.openclaw/docs/服务器变更总日志.md`
+- 技能包变更日志：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/docs/overview/服务器变更日志.md`
+- 说明：页面上应同时展示这两份日志；总日志看全局环境，技能包日志看禅道包内部
+
 三只虾的功能：
 - `zentao-skill-shrimp`：禅道包内部维护虾，负责整理技能包结构、模块说明、脚本入口、文档一致性与长期维护风险。
 - `backup-cleanup-shrimp`：OpenClaw 全局备份清理虾，负责定期清理 `/root/.openclaw` 范围内命名明确的旧备份副本与临时备份文件；当前节奏为每 7 天一次。

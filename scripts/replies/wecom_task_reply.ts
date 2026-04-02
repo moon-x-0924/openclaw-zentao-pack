@@ -137,15 +137,52 @@ function buildStatusCounts(tasks: JsonObject[]): Record<string, number> {
   return counts;
 }
 
-export async function handleWecomTaskRequest(input: {
+function formatBugLine(bug: JsonObject, index: number): string {
+  const id = typeof bug.id === "number" ? `#${bug.id}` : "#-";
+  const title =
+    typeof bug.title === "string" && bug.title.trim() ? bug.title.trim() : "Unnamed bug";
+  const status =
+    typeof bug.status === "string" && bug.status.trim() ? bug.status.trim() : "unknown";
+  const severity =
+    bug.severity !== undefined && bug.severity !== null ? ` | severity ${String(bug.severity)}` : "";
+  const pri = bug.pri !== undefined && bug.pri !== null ? ` | pri ${String(bug.pri)}` : "";
+  return `${index + 1}. [${status}] ${id} ${title}${severity}${pri}`;
+}
+
+function buildBugReplyText(input: {
+  userid: string;
+  matchedAccount: string | null;
+  count: number;
+  bugs: JsonObject[];
+  maxLines: number;
+}): string {
+  const header = [
+    `已识别企微用户：${input.userid}`,
+    `禅道账号：${input.matchedAccount ?? "未匹配到"}`,
+    `Bug 总数：${input.count}`,
+  ];
+
+  const lines = input.bugs.slice(0, input.maxLines).map(formatBugLine);
+  if (input.bugs.length === 0) {
+    lines.push("当前没有查询到你的 bug。");
+  } else if (input.bugs.length > input.maxLines) {
+    lines.push(`仅展示前 ${input.maxLines} 条，请缩小条件后重试。`);
+  }
+
+  return [...header, "", ...lines].join("\n");
+}
+
+async function resolveWecomContext(input: {
   userid?: string;
   payload?: WecomMessagePayload;
-  status?: string;
-  limit?: number;
-  pageSize?: number;
-  maxLines?: number;
   syncUser?: boolean;
-}): Promise<JsonObject> {
+}): Promise<{
+  userid: string;
+  zentaoClient: ZentaoClient;
+  wecomUser: WecomDirectoryUser | null;
+  syncResult: JsonObject | null;
+  wecomError: string | null;
+}> {
   const payload = input.payload ?? {};
   const userid = input.userid ?? extractUserid(payload);
   if (!userid) {
@@ -153,9 +190,6 @@ export async function handleWecomTaskRequest(input: {
       "Cannot determine current WeCom userid. Pass --userid or provide userid in the callback payload.",
     );
   }
-  const limit = input.limit;
-  const pageSize = input.pageSize;
-  const maxLines = input.maxLines ?? 10;
 
   const wecomClient = new WecomClient();
   let wecomUser: WecomDirectoryUser | null = null;
@@ -176,6 +210,29 @@ export async function handleWecomTaskRequest(input: {
   if (wecomUser) {
     syncResult = await zentaoClient.syncWecomUser(mapWecomUserToSyncPayload(wecomUser, userid));
   }
+
+  return {
+    userid,
+    zentaoClient,
+    wecomUser,
+    syncResult,
+    wecomError,
+  };
+}
+
+export async function handleWecomTaskRequest(input: {
+  userid?: string;
+  payload?: WecomMessagePayload;
+  status?: string;
+  limit?: number;
+  pageSize?: number;
+  maxLines?: number;
+  syncUser?: boolean;
+}): Promise<JsonObject> {
+  const limit = input.limit;
+  const pageSize = input.pageSize;
+  const maxLines = input.maxLines ?? 10;
+  const { userid, zentaoClient, wecomUser, syncResult, wecomError } = await resolveWecomContext(input);
 
   const result = await zentaoClient.getMyTasks({
     status: input.status ?? "all",
@@ -207,6 +264,45 @@ export async function handleWecomTaskRequest(input: {
     status_counts: statusCounts,
     reply_text: replyText,
     tasks,
+  };
+}
+
+export async function handleWecomBugRequest(input: {
+  userid?: string;
+  payload?: WecomMessagePayload;
+  limit?: number;
+  maxLines?: number;
+  syncUser?: boolean;
+}): Promise<JsonObject> {
+  const limit = input.limit;
+  const maxLines = input.maxLines ?? 10;
+  const { userid, zentaoClient, wecomUser, syncResult, wecomError } = await resolveWecomContext(input);
+
+  const result = await zentaoClient.getMyBugs({
+    limit,
+  });
+  const bugs = result.bugs as JsonObject[];
+  const matchedAccount =
+    typeof result.matchedUser?.account === "string" ? result.matchedUser.account : null;
+  const replyText = buildBugReplyText({
+    userid,
+    matchedAccount,
+    count: bugs.length,
+    bugs,
+    maxLines,
+  });
+
+  return {
+    ok: true,
+    userid,
+    matched_user: result.matchedUser,
+    identifiers: result.identifiers,
+    sync_result: syncResult,
+    wecom_user: wecomUser,
+    wecom_error: wecomError,
+    count: bugs.length,
+    reply_text: replyText,
+    bugs,
   };
 }
 

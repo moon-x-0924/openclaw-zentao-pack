@@ -1,16 +1,6 @@
 ﻿import { parseArgs } from "node:util";
-import { printJson, type JsonObject, type JsonValue, ZentaoClient } from "../shared/zentao_client";
+import { printJson, type JsonObject, ZentaoClient } from "../shared/zentao_client";
 import { summarizeList } from "./_query_utils";
-
-function extractItems(value: JsonValue | undefined): JsonObject[] {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is JsonObject => typeof item === "object" && item !== null && !Array.isArray(item));
-  }
-  if (typeof value === "object" && value !== null) {
-    return Object.values(value).filter((item): item is JsonObject => typeof item === "object" && item !== null && !Array.isArray(item));
-  }
-  return [];
-}
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
@@ -20,15 +10,18 @@ async function main(): Promise<void> {
     allowPositionals: false,
   });
   const client = new ZentaoClient({ userid: values.userid });
-  const data = await client.getWebJsonViewData("/my-work-bug-assignedTo.json");
-  const items = extractItems(data.bugs).sort((left, right) => Number(right.id ?? 0) - Number(left.id ?? 0));
+  const result = await client.getMyBugs();
+  const items = result.bugs as JsonObject[];
 
   printJson({
     ok: true,
     type: "my-bugs",
-    title: data.title ?? null,
+    userid: values.userid ?? client.userid ?? null,
+    matched_user: result.matchedUser,
+    identifiers: result.identifiers,
+    title: result.title,
     count: items.length,
-    todo_count: data.todoCount ?? null,
+    todo_count: result.todoCount,
     items: summarizeList(items, ["id", "title", "status", "severity", "pri", "assignedTo", "openedBy", "resolvedBy", "closedBy"]),
   });
 }
@@ -38,4 +31,3 @@ void main().catch((error) => {
 `);
   process.exit(1);
 });
-

@@ -151,7 +151,7 @@ npm run update-task-status -- `
 确认后建议同步更新：
 
 - [task-status-workflow.md](E:/AI/openclaw/openclaw-zentao/references/task-status-workflow.md)
-- [update_task_status.ts](E:/AI/openclaw/openclaw-zentao/scripts/update_task_status.ts)
+- [update_task_status.ts](E:/AI/openclaw/openclaw-zentao/scripts/actions/update_task_status.ts)
 
 ## 第七步：验证进度查询
 

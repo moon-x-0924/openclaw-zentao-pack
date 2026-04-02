@@ -11,216 +11,216 @@ strategy:
 
 routes:
   - intent: query-my-tasks
-    triggers: ["我的任务", "查任务", "看任务", "待办", "我的待办"]
+    triggers: ["我的任务", "查询我的任务", "查我的任务", "查任务", "看任务", "任务列表", "我的待办", "我的待办任务", "待办", "待办任务"]
     script: query-my-tasks
     default_args:
       userid: current_user
 
   - intent: query-my-bugs
-    triggers: ["我的bug", "查我的bug", "看我的bug"]
+    triggers: ["我的bug", "我的 bug", "我的Bug", "我的 Bug", "查询我的bug", "查询我的 bug", "查我的bug", "查我的 bug", "看我的bug", "看我的 bug", "看看我的bug", "bug列表", "我的缺陷"]
     script: query-my-bugs
     default_args:
       userid: current_user
 
   - intent: query-products
-    triggers: ["查产品", "产品列表", "看产品"]
+    triggers: ["查产品", "产品列表", "看产品", "有哪些产品"]
     script: query-products
 
   - intent: query-product-modules
-    triggers: ["查模块", "产品模块", "看模块"]
+    triggers: ["查模块", "产品模块", "看模块", "模块列表"]
     script: query-product-modules
     required_args: [product]
 
   - intent: query-projects
-    triggers: ["查项目", "项目列表", "看项目"]
+    triggers: ["查项目", "项目列表", "看项目", "有哪些项目"]
     script: query-projects
 
   - intent: query-executions
-    triggers: ["查执行", "查迭代", "执行列表", "迭代列表"]
+    triggers: ["查执行", "查迭代", "执行列表", "迭代列表", "看执行", "看迭代", "有哪些迭代", "项目有哪些迭代", "迭代情况"]
     script: query-executions
     required_args: [project]
 
   - intent: query-execution-stories
-    triggers: ["查执行需求", "迭代需求", "执行需求"]
+    triggers: ["查执行需求", "迭代需求", "执行需求", "看执行需求", "看迭代需求"]
     script: query-execution-stories
     required_args: [execution]
 
   - intent: query-execution-tasks
-    triggers: ["查执行任务", "迭代任务", "执行任务"]
+    triggers: ["查执行任务", "迭代任务", "执行任务", "看执行任务", "看迭代任务", "迭代里有哪些任务", "这个迭代有哪些任务"]
     script: query-execution-tasks
     required_args: [execution]
 
   - intent: query-project-team
-    triggers: ["查项目团队", "项目团队", "项目成员"]
+    triggers: ["查项目团队", "项目团队", "项目成员", "看项目团队", "看项目成员"]
     script: query-project-team
     required_args: [project]
 
   - intent: query-execution-team
-    triggers: ["查执行团队", "执行团队", "迭代成员"]
+    triggers: ["查执行团队", "执行团队", "迭代成员", "看执行团队", "看迭代成员"]
     script: query-execution-team
     required_args: [execution]
 
   - intent: query-product-stories
-    triggers: ["查需求", "产品需求", "研发需求"]
+    triggers: ["查需求", "产品需求", "研发需求", "看需求", "需求列表"]
     script: query-product-stories
     required_args: [product]
 
   - intent: query-story-detail
-    triggers: ["查需求详情", "需求详情", "看需求"]
+    triggers: ["查需求详情", "需求详情", "看需求详情", "需求明细"]
     script: query-story-detail
     required_args: [story]
 
   - intent: query-task-detail
-    triggers: ["查任务详情", "任务详情", "看任务详情"]
+    triggers: ["查任务详情", "任务详情", "看任务详情", "任务明细"]
     script: query-task-detail
     required_args: [task]
 
   - intent: query-bug-detail
-    triggers: ["查bug详情", "bug详情", "看bug"]
+    triggers: ["查bug详情", "查 bug详情", "bug详情", "bug明细", "看bug详情", "看 bug详情", "看bug", "看 bug"]
     script: query-bug-detail
     required_args: [bug]
 
   - intent: query-testcases
-    triggers: ["查测试用例", "用例列表", "看用例"]
+    triggers: ["查测试用例", "用例列表", "看用例", "测试用例列表"]
     script: query-testcases
     required_args: [product]
 
   - intent: query-testtasks
-    triggers: ["查测试单", "测试任务", "看测试单"]
+    triggers: ["查测试单", "测试任务", "看测试单", "测试单列表", "提测单", "测试单", "这个迭代的测试单", "这个执行的测试单"]
     script: query-testtasks
     required_args_any: [testtask, execution, project, product]
 
   - intent: query-testtask-detail
-    triggers: ["查测试单详情", "测试单详情"]
+    triggers: ["查测试单详情", "测试单详情", "看测试单详情", "测试单明细"]
     script: query-testtask-detail
     required_args: [testtask]
 
   - intent: query-testtask-cases
-    triggers: ["查测试单用例", "测试单案例", "测试单用例"]
+    triggers: ["查测试单用例", "测试单案例", "测试单用例", "看测试单用例", "测试单关联用例"]
     script: query-testtask-cases
     required_args: [testtask]
 
   - intent: query-test-exit-readiness
-    triggers: ["测试准出", "查准出", "能不能提测", "能否准出"]
+    triggers: ["测试准出", "查准出", "能不能提测", "能否准出", "是否可以提测", "可以提测吗", "适不适合提测", "能不能开始测试", "能否开始测试", "是否可以开始测试", "可以开始测试吗", "是否适合开始测试", "是否适合提测", "是否满足提测条件", "是否具备提测条件", "是否可以开始提测"]
     script: query-test-exit-readiness
     required_args_any: [testtask, execution, project, product]
 
   - intent: query-go-live-checklist
-    triggers: ["上线检查", "上线前检查", "发布检查"]
+    triggers: ["上线检查", "上线前检查", "发布检查", "可以上线吗", "能上线吗", "是否可以上线", "发布前检查", "上线前确认", "是否具备上线条件"]
     script: query-go-live-checklist
     required_args_any: [testtask, execution, product]
 
   - intent: query-acceptance-overview
-    triggers: ["验收概览", "验收情况", "验收总览"]
+    triggers: ["验收概览", "验收情况", "验收总览", "验收怎么样", "验收如何", "验收进展", "当前验收情况"]
     script: query-acceptance-overview
     required_args_any: [testtask, execution, product]
 
   - intent: query-closure-readiness
-    triggers: ["关闭准备度", "结项准备", "关闭准备"]
+    triggers: ["关闭准备度", "结项准备", "关闭准备", "可以结项吗", "是否可以结项", "结项准备度", "是否具备结项条件"]
     script: query-closure-readiness
     required_args_any: [testtask, execution, product]
 
   - intent: query-closure-items
-    triggers: ["关闭阻塞项", "关闭问题", "关闭清单"]
+    triggers: ["关闭阻塞项", "关闭问题", "关闭清单", "还有哪些问题不能结项", "结项阻塞项", "还有哪些阻塞项", "有哪些问题还没解决"]
     script: query-closure-items
     required_args_any: [testtask, execution, product]
 
   - intent: query-releases
-    triggers: ["查发布", "发布列表", "看发布"]
+    triggers: ["查发布", "发布列表", "看发布", "有哪些发布", "版本列表", "有哪些版本"]
     script: query-releases
     required_args: [product]
 
   - intent: query-release-detail
-    triggers: ["查发布详情", "发布详情", "看发布详情"]
+    triggers: ["查发布详情", "发布详情", "看发布详情", "发布明细", "版本详情", "看版本详情"]
     script: query-release-detail
     required_args: [release]
 
   - intent: create-product
-    triggers: ["创建产品", "建产品", "新建产品"]
+    triggers: ["创建产品", "建产品", "新建产品", "新增产品"]
     script: create-product
     required_args: [name]
 
   - intent: create-product-with-modules
-    triggers: ["创建产品并建模块", "初始化产品", "产品初始化"]
+    triggers: ["创建产品并建模块", "初始化产品", "产品初始化", "新产品初始化"]
     script: create-product-with-modules
     required_args: [name, modules]
 
   - intent: create-product-modules
-    triggers: ["创建模块", "加模块", "新建模块"]
+    triggers: ["创建模块", "加模块", "新建模块", "新增模块"]
     script: create-product-modules
     required_args: [product, modules]
 
   - intent: create-story
-    triggers: ["创建需求", "提需求", "新建需求"]
+    triggers: ["创建需求", "提需求", "新建需求", "新增需求"]
     script: create-story
     required_args: [product, title, spec, verify, reviewer]
 
   - intent: review-story
-    triggers: ["评审需求", "通过需求", "需求评审"]
+    triggers: ["评审需求", "通过需求", "需求评审", "审核需求"]
     script: review-story
     required_args: [story, result]
 
   - intent: create-task
-    triggers: ["创建任务", "新建任务", "拆任务"]
+    triggers: ["创建任务", "新建任务", "拆任务", "新增任务"]
     script: create-task
     required_args: [execution, name]
 
   - intent: update-task-status
-    triggers: ["更新任务状态", "开始任务", "完成任务", "关闭任务"]
+    triggers: ["更新任务状态", "开始任务", "完成任务", "关闭任务", "激活任务", "暂停任务"]
     script: update-task-status
     required_args: [task-id, status]
 
   - intent: create-testcase
-    triggers: ["创建测试用例", "新建用例", "写用例"]
+    triggers: ["创建测试用例", "新建用例", "写用例", "新增测试用例"]
     script: create-testcase
     required_args: [product, title, steps, expects]
 
   - intent: create-testtask
-    triggers: ["创建测试单", "新建测试单", "提测"]
+    triggers: ["创建测试单", "新建测试单", "提测", "新增测试单"]
     script: create-testtask
     required_args: [product, build, name, begin, end]
 
   - intent: link-testtask-cases
-    triggers: ["关联测试单用例", "测试单挂用例"]
+    triggers: ["关联测试单用例", "测试单挂用例", "测试单关联用例"]
     script: link-testtask-cases
     required_args: [testtask, cases]
 
   - intent: run-testtask-case
-    triggers: ["执行测试用例", "跑用例", "标记通过"]
+    triggers: ["执行测试用例", "跑用例", "标记通过", "标记失败", "标记阻塞"]
     script: run-testtask-case
     required_args: [run, result]
 
   - intent: create-bug
-    triggers: ["创建bug", "提bug", "新建bug"]
+    triggers: ["创建bug", "创建 bug", "提bug", "提 bug", "新建bug", "新建 bug", "新增bug", "新增 bug", "提缺陷", "报bug", "报 bug", "提个bug", "提个 bug"]
     script: create-bug
     required_args: [product, title, builds]
 
   - intent: assign-bug
-    triggers: ["指派bug", "分派bug", "转交bug"]
+    triggers: ["指派bug", "指派 bug", "分派bug", "分派 bug", "转交bug", "转交 bug", "把bug指给", "把 bug 指给"]
     script: assign-bug
     required_args: [bug, assigned-to]
 
   - intent: update-bug-status
-    triggers: ["更新bug状态", "解决bug", "关闭bug", "激活bug"]
+    triggers: ["更新bug状态", "更新 bug状态", "解决bug", "解决 bug", "关闭bug", "关闭 bug", "激活bug", "激活 bug", "把bug解决", "把 bug 解决", "把bug关闭", "把 bug 关闭"]
     script: update-bug-status
     required_args: [bug-id, status]
 
   - intent: create-release
-    triggers: ["创建发布", "新建发布", "发版"]
+    triggers: ["创建发布", "新建发布", "发版", "新增发布", "创建版本", "新建版本"]
     script: create-release
     required_args: [product, name, date]
 
   - intent: link-release-items
-    triggers: ["关联发布项", "发布挂需求", "发布挂bug"]
+    triggers: ["关联发布项", "发布挂需求", "发布挂bug", "发布挂 bug", "发布关联项"]
     script: link-release-items
     required_args: [release]
 
   - intent: update-release-status
-    triggers: ["更新发布状态", "发布状态"]
+    triggers: ["更新发布状态", "发布状态", "关闭发布", "激活发布", "关闭版本", "激活版本"]
     script: update-release-status
     required_args: [release, status]
 
   - intent: update-story-status
-    triggers: ["更新需求状态", "关闭需求", "激活需求"]
+    triggers: ["更新需求状态", "关闭需求", "激活需求", "变更需求状态"]
     script: update-story-status
     required_args: [story, status]

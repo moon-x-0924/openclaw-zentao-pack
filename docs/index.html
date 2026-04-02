@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenClaw 文档门户</title>
+  <style>
+    :root {
+      --bg: #f6f9ff;
+      --ink: #1d2740;
+      --muted: #61708f;
+      --line: #d8e1ef;
+      --panel: rgba(255,255,255,.92);
+      --panel-strong: #ffffff;
+      --brand: #8abfb8;
+      --brand-2: #b2cdff;
+      --brand-3: #e2ebff;
+      --soft: #f3f8ff;
+      --warm: #fff9ee;
+      --shadow: 0 14px 32px rgba(41, 61, 102, .08);
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(127,177,241,.18), transparent 34%),
+        radial-gradient(circle at top right, rgba(145,204,192,.14), transparent 30%),
+        linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);
+    }
+    .wrap {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #eef7f3 0%, #eef4ff 54%, #f8fbff 100%);
+      color: var(--ink);
+      border-radius: 30px;
+      padding: 28px;
+      box-shadow: 0 18px 42px rgba(67, 88, 138, .10);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(188, 204, 231, .92);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -70px -80px auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: rgba(131,174,241,.14);
+      filter: blur(8px);
+    }
+    .hero-top {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.76);
+      border: 1px solid rgba(179, 197, 226, .95);
+      font-size: 13px;
+      color: #4a637f;
+    }
+    .hero h1 {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1.15;
+    }
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 760px;
+      line-height: 1.8;
+      color: #566684;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr .9fr;
+      gap: 18px;
+      margin-top: 22px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-panel {
+      background: rgba(255,255,255,.58);
+      border: 1px solid rgba(191, 207, 233, .92);
+      border-radius: 22px;
+      padding: 18px;
+      backdrop-filter: blur(10px);
+    }
+    .hero-panel h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    .hero-panel p {
+      margin: 0 0 14px;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .hero-links, .steps, .cards, .navgrid {
+      display: grid;
+      gap: 12px;
+    }
+    .hero-links {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    .hero-links a, .card a, .nav a, .dir a {
+      text-decoration: none;
+      color: inherit;
+    }
+    .hero-link {
+      display: block;
+      border-radius: 16px;
+      padding: 14px 15px;
+      background: rgba(255,255,255,.92);
+      color: #0f172a;
+      border: 1px solid rgba(255,255,255,.55);
+      min-height: 84px;
+      transition: .18s ease;
+    }
+    .hero-link:hover, .card-link:hover, .nav-link:hover, .dir-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(9,30,66,.10);
+      border-color: #b7c7ec;
+    }
+    .hero-link strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+    .hero-link span {
+      font-size: 13px;
+      color: #5b6479;
+      line-height: 1.6;
+    }
+    .steps {
+      margin: 0;
+      padding-left: 18px;
+      color: #4c6480;
+      line-height: 1.8;
+    }
+    .section {
+      margin-top: 24px;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .section-head h2 {
+      margin: 0;
+      font-size: 28px;
+    }
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .navgrid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .nav, .card, .guide {
+      background: rgba(255,255,255,.94);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .nav {
+      padding: 18px;
+    }
+    .nav h3, .card h3, .guide h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+    .nav p, .card p, .guide p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .dir {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .dir-link, .card-link, .nav-link {
+      display: block;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      border-radius: 16px;
+      padding: 14px 15px;
+      transition: .18s ease;
+    }
+    .dir-link strong, .card-link strong, .nav-link strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 16px;
+    }
+    .dir-link span, .card-link span, .nav-link span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .cards {
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    }
+    .card {
+      padding: 20px;
+    }
+    .card .list {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .guide {
+      background: linear-gradient(180deg, #fffaf0 0%, #fff 100%);
+      padding: 20px;
+    }
+    .guide ol {
+      margin: 14px 0 0;
+      padding-left: 20px;
+      line-height: 1.9;
+      color: var(--ink);
+    }
+    .guide code {
+      background: #f5f7fb;
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+    .footer-note {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.7);
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    @media (max-width: 920px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 32px; }
+      .section-head { display: block; }
+      .section-head p { margin-top: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-top">
+        <span class="tag">当前服务器文档入口</span>
+        <span class="tag">OpenClaw + ZenTao Pack</span>
+        <span class="tag">Markdown 预览已启用</span>
+      </div>
+      <h1>OpenClaw 文档门户</h1>
+      <p>这里集中查看当前服务器上的禅道技能包说明、企微禅道实现链路、UI 原型，以及服务器维护日志。首页负责导览，目录页负责连续浏览。</p>
+      <div class="hero-grid">
+        <div class="hero-panel">
+          <h2>常用入口</h2>
+          <div class="hero-links">
+            <a class="hero-link" href="%E7%A6%85%E9%81%93%E6%8A%80%E8%83%BD%E5%8C%85%E8%AF%B4%E6%98%8E.md"><strong>禅道技能包说明</strong><span>先看整体能力、目录和基本背景。</span></a>
+            <a class="hero-link" href="wecom-zentao/07-current-runtime-flow.md"><strong>当前实现链路</strong><span>最适合和组员对齐现在到底怎么跑。</span></a>
+            <a class="hero-link" href="ops/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%BB%E5%8F%98%E6%9B%B4%E6%97%A5%E5%BF%97.md"><strong>服务器总变更日志</strong><span>先看全局环境最近改了什么。</span></a>
+            <a class="hero-link" href="ops/%E6%8A%80%E8%83%BD%E5%8C%85%E5%8F%98%E6%9B%B4%E6%97%A5%E5%BF%97.md"><strong>技能包变更日志</strong><span>看禅道包内部最近改了什么。</span></a>
+            <a class="hero-link" href="wecom-zentao/09-wecom-ui-prototype-mvp.html"><strong>企微 UI 原型 MVP</strong><span>直接看页面原型和交互效果。</span></a>
+            <a class="hero-link" href="ops/"><strong>服务器维护 / 日志</strong><span>看变更、巡检、备份清理和维护角色文档。</span></a>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <h2>第一次怎么读</h2>
+          <ol class="steps">
+            <li>先看“当前实现链路”，了解真实运行流程。</li>
+            <li>再看“架构说明”和“企业微信回调说明”。</li>
+            <li>需要演示时打开 UI 原型和泳道图。</li>
+            <li>要追踪服务器操作，再进“服务器维护 / 日志”。</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>目录页入口</h2>
+        <p>想连续翻文档时，直接进目录页最顺手，不用在首页来回跳。</p>
+      </div>
+      <div class="navgrid">
+        <article class="nav">
+          <h3>总览目录</h3>
+          <p>技能包能力、项目现状、映射清单、服务器说明。</p>
+          <div class="dir">
+            <a class="dir-link" href="overview/"><strong>进入 overview/</strong><span>适合先建立整体背景。</span></a>
+          </div>
+        </article>
+        <article class="nav">
+          <h3>集成目录</h3>
+          <p>企业微信回调、集成方案、Prompt 配置等操作说明。</p>
+          <div class="dir">
+            <a class="dir-link" href="integration/"><strong>进入 integration/</strong><span>适合联调和接入查看。</span></a>
+          </div>
+        </article>
+        <article class="nav">
+          <h3>企微禅道专题</h3>
+          <p>当前方案、运行链路、原型、泳道图和历史归档。</p>
+          <div class="dir">
+            <a class="dir-link" href="wecom-zentao/"><strong>进入 wecom-zentao/</strong><span>看当前核心专题文档。</span></a>
+            <a class="dir-link" href="wecom-zentao/archive/"><strong>进入 archive/</strong><span>看早期方案稿、PRD 和设计草案。</span></a>
+          </div>
+        </article>
+        <article class="nav">
+          <h3>服务器维护 / 日志</h3>
+          <p>变更记录、巡检日志、维护角色说明统一入口。</p>
+          <div class="dir">
+            <a class="dir-link" href="ops/"><strong>进入 ops/</strong><span>看服务器维护相关文档。</span></a>
+            <a class="dir-link" href="ops/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%BB%E5%8F%98%E6%9B%B4%E6%97%A5%E5%BF%97.md"><strong>服务器总变更日志</strong><span>查看全局环境的倒叙变更记录。</span></a>
+            <a class="dir-link" href="ops/%E6%8A%80%E8%83%BD%E5%8C%85%E5%8F%98%E6%9B%B4%E6%97%A5%E5%BF%97.md"><strong>技能包变更日志</strong><span>查看禅道技能包的倒叙变更记录。</span></a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>主题入口</h2>
+        <p>按主题查看，不同卡片只放对应内容，避免重复。</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <h3>技能包总览</h3>
+          <p>适合给组员快速建立背景，理解能力边界和当前状态。</p>
+          <div class="list">
+            <a class="card-link" href="%E7%A6%85%E9%81%93%E6%8A%80%E8%83%BD%E5%8C%85%E8%AF%B4%E6%98%8E.md"><strong>禅道技能包说明</strong><span>技能包能力与目录说明。</span></a>
+            <a class="card-link" href="overview/当前项目状态总览.md"><strong>当前项目状态总览</strong><span>看项目整体状态和近期收敛结果。</span></a>
+            <a class="card-link" href="overview/技能包总体功能说明.md"><strong>技能包总体功能说明</strong><span>看能力边界和覆盖范围。</span></a>
+            <a class="card-link" href="overview/模块与脚本映射清单.md"><strong>模块与脚本映射清单</strong><span>适合查模块和脚本对应关系。</span></a>
+            <a class="card-link" href="overview/服务器自建禅道Skill说明.md"><strong>服务器自建禅道 Skill 说明</strong><span>看服务器事实源说明。</span></a>
+          </div>
+        </article>
+        <article class="card">
+          <h3>企微禅道专题</h3>
+          <p>适合看当前实现方案、运行链路、原型和展示材料。</p>
+          <div class="list">
+            <a class="card-link" href="wecom-zentao/README.md"><strong>专题 README</strong><span>先看当前核心文档和历史归档说明。</span></a>
+            <a class="card-link" href="wecom-zentao/07-current-runtime-flow.md"><strong>当前运行链路</strong><span>当前服务器真实生效链路。</span></a>
+            <a class="card-link" href="wecom-zentao/04-architecture.md"><strong>架构说明</strong><span>看分层、映射、权限和异常处理。</span></a>
+            <a class="card-link" href="wecom-zentao/05-master-solution.md"><strong>总方案</strong><span>适合统一看业务目标与完整方案。</span></a>
+            <a class="card-link" href="wecom-zentao/09-wecom-ui-prototype-mvp.html"><strong>企微 UI 原型 MVP</strong><span>直接演示页面原型。</span></a>
+            <a class="card-link" href="wecom-zentao/10-cross-role-swimlane.html"><strong>跨角色泳道图</strong><span>适合开会展示和截图。</span></a>
+          </div>
+        </article>
+        <article class="card">
+          <h3>集成 / 配置</h3>
+          <p>适合看接入说明、回调入口和集成实现描述。</p>
+          <div class="list">
+            <a class="card-link" href="integration/WECOM_CALLBACK.md"><strong>企业微信回调说明</strong><span>看 callback 当前真实逻辑。</span></a>
+            <a class="card-link" href="integration/禅道企业微信集成方案.md"><strong>禅道企业微信集成方案</strong><span>看当前版本集成设计。</span></a>
+            <a class="card-link" href="prompt-config-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md"><strong>Prompt Config 使用说明</strong><span>看 Prompt 配置相关说明。</span></a>
+          </div>
+        </article>
+        <article class="card">
+          <h3>服务器维护 / 日志</h3>
+          <p>统一查看服务器总变更、技能包变更、巡检日志、备份清理和维护角色说明。</p>
+          <div class="list">
+            <a class="card-link" href="ops/README.md"><strong>维护文档索引</strong><span>先看这页，知道日志怎么分布。</span></a>
+            <a class="card-link" href="ops/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%BB%E5%8F%98%E6%9B%B4%E6%97%A5%E5%BF%97.md"><strong>服务器总变更日志</strong><span>看 `/root/.openclaw` 全局层面的实际变更。</span></a>
+            <a class="card-link" href="ops/%E6%8A%80%E8%83%BD%E5%8C%85%E5%8F%98%E6%9B%B4%E6%97%A5%E5%BF%97.md"><strong>技能包变更日志</strong><span>看 `openclaw-zentao-pack` 内部实际变更。</span></a>
+            <a class="card-link" href="ops/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%BB%E5%8F%98%E6%9B%B4%E8%AE%B0%E5%BD%95%E8%A7%84%E8%8C%83.md"><strong>服务器总变更记录规范</strong><span>看全局日志该如何记录。</span></a>
+            <a class="card-link" href="ops/%E6%8A%80%E8%83%BD%E5%8C%85%E5%8F%98%E6%9B%B4%E8%AE%B0%E5%BD%95%E8%A7%84%E8%8C%83.md"><strong>技能包变更记录规范</strong><span>看技能包日志该如何记录。</span></a>
+            <a class="card-link" href="ops/maintenance-heartbeat-log.md"><strong>巡检心跳日志</strong><span>看维护巡检记录。</span></a>
+            <a class="card-link" href="ops/backup-cleanup-log.md"><strong>备份清理日志</strong><span>看清理动作执行记录。</span></a>
+            <a class="card-link" href="ops/maintainers/README.md"><strong>维护角色目录说明</strong><span>看全局维护角色文档入口。</span></a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="guide">
+        <h3>使用提示</h3>
+        <p>这个首页更适合导航，不适合承载全部内容。想顺着看文档时，优先进入对应目录页。</p>
+        <ol>
+          <li>直接打开 <code>.md</code> 文件会自动进入 Markdown 预览页。</li>
+          <li>想看原始 Markdown 文本，在地址后加 <code>?raw=1</code>。</li>
+          <li>如果你是第一次进来，不确定从哪里看，就先点“当前实现链路”。</li>
+        </ol>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      当前静态根目录：<code>/root/.openclaw/workspace/skills/openclaw-zentao-pack/docs</code><br>
+      当前首页已经按主题去重，减少同一文档在多个区域重复出现。
+    </div>
+  </div>
+</body>
+</html>

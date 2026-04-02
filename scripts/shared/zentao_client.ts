@@ -10,7 +10,6 @@ import { URL } from "node:url";
 export const DEFAULT_BASE_URL = "http://zentao.lsym.cn/";
 export const DEFAULT_TIMEOUT = 30_000;
 export const SESSION_CACHE = join(tmpdir(), "openclaw-zentao-session.json");
-export const ACTOR_AUTH_CACHE_PATH = join(homedir(), ".openclaw", "private", "zentao.actor-auth-cache.json");
 export const MAX_REDIRECTS = 5;
 export const OPENCLAW_ZENTAO_CONFIG_PATH = join(
   homedir(),
@@ -25,7 +24,6 @@ export const ZBOX_MYSQL_SOCKET = "/opt/zbox/tmp/mysql/mysql.sock";
 export const DEFAULT_MYSQL_USER = "root";
 export const DEFAULT_MYSQL_PASSWORD = "123456";
 export const DEFAULT_ZENTAO_DATABASE = "zentao";
-export const DEFAULT_ACTOR_AUTH_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 export const BOT_EXECUTION_NOTE = "通过禅道机器人或者AI-PMO自建应用执行";
 
 type HttpMethod = "GET" | "POST" | "PUT";
@@ -72,7 +70,6 @@ interface Config {
     default_visions?: string[] | string;
     default_dept?: number | string;
   };
-  user_aliases?: Record<string, string>;
   web_routes?: {
     my_task_assigned?: string;
     my_bug_assigned?: string;
@@ -112,24 +109,6 @@ interface SessionCookie {
 interface SessionCache {
   token: string | null;
   cookies: SessionCookie[];
-}
-
-interface ActorCredential {
-  account: string;
-  passwordHash: string;
-  realname?: string;
-  source: string;
-}
-
-interface ActorAuthCacheEntry extends ActorCredential {
-  cacheKey: string;
-  cachedAt: string;
-  userid?: string;
-}
-
-interface ActorAuthCacheFile {
-  version: number;
-  entries: Record<string, ActorAuthCacheEntry>;
 }
 
 interface MysqlRuntimeConfig {
@@ -178,10 +157,23 @@ export interface ZentaoTask extends JsonObject {
   pri?: number;
 }
 
+export interface ZentaoBug extends JsonObject {
+  id?: number;
+  title?: string;
+  status?: string;
+  assignedTo?: string;
+  openedBy?: string;
+  resolvedBy?: string;
+  closedBy?: string;
+  severity?: number | string;
+  pri?: number | string;
+}
+
 export interface WecomOrgUser extends JsonObject {
   userid?: string;
   userId?: string;
   account?: string;
+  alias?: string;
   name?: string;
   realname?: string;
   email?: string;
@@ -323,8 +315,6 @@ export class ZentaoClient {
 
   userListLimit: number;
 
-  userAliases: Record<string, string>;
-
   syncDefaultPassword?: string;
 
   syncDefaultRole?: string;
@@ -362,7 +352,6 @@ export class ZentaoClient {
     syncDefaultGroup?: number | string;
     syncDefaultVisions?: string[] | string;
     syncDefaultDept?: number | string;
-    userAliases?: Record<string, string>;
   }) {
     const config = loadConfig();
     this.baseUrl = (
@@ -381,14 +370,7 @@ export class ZentaoClient {
     this.password = options?.password ?? process.env.ZENTAO_PASSWORD ?? config.password;
     this.passwordHash = options?.passwordHash ?? process.env.ZENTAO_PASSWORD_HASH;
     this.userid = options?.userid ?? process.env.ZENTAO_USERID ?? config.userid;
-    this.explicitCredentialMode = Boolean(
-      options?.account ??
-        options?.password ??
-        options?.passwordHash ??
-        process.env.ZENTAO_ACCOUNT ??
-        process.env.ZENTAO_PASSWORD ??
-        process.env.ZENTAO_PASSWORD_HASH,
-    );
+    this.explicitCredentialMode = Boolean(this.account && (this.password ?? this.passwordHash));
     this.timeout = options?.timeout ?? DEFAULT_TIMEOUT;
     this.verifySsl = options?.verifySsl ?? config.verify_ssl ?? true;
     this.userMatchFields = normalizeUserMatchFields(
@@ -398,7 +380,6 @@ export class ZentaoClient {
     this.userListLimit = normalizeUserListLimit(
       options?.userListLimit ?? config.user_match?.limit,
     );
-    this.userAliases = normalizeUserAliasMap(options?.userAliases ?? config.user_aliases);
     this.syncDefaultPassword =
       options?.syncDefaultPassword ??
       process.env.ZENTAO_SYNC_DEFAULT_PASSWORD ??
@@ -439,8 +420,6 @@ export class ZentaoClient {
   }
 
   async login(force = false): Promise<JsonObject> {
-    await this.ensureActorCredentialsResolved(force);
-
     if (!force && (this.token || this.cookies.size > 0)) {
       if (!this.token && this.cookies.size > 0) {
         const validSession = await this.hasValidJsonSession();
@@ -485,12 +464,10 @@ export class ZentaoClient {
     }
 
     let matchedUser: ZentaoUser | null = null;
-    if (this.userid) {
-      try {
-        matchedUser = await this.findUserByUserid(this.userid);
-      } catch {
-        matchedUser = null;
-      }
+    try {
+      matchedUser = await this.resolveCurrentUser();
+    } catch {
+      matchedUser = null;
     }
     this.matchedUser = matchedUser;
     this.saveCachedSession();
@@ -703,7 +680,7 @@ export class ZentaoClient {
     const limit = normalizePositiveInteger(options?.limit, 50);
     const pageSize = normalizePositiveInteger(options?.pageSize, 100);
     const matchedUser = await this.resolveCurrentUser();
-    const identifiers = buildUserIdentifiers(matchedUser, this.userid, this.account);
+    const identifiers = this.buildCurrentUserIdentifiers(matchedUser);
     let tasks: ZentaoTask[];
 
     try {
@@ -716,6 +693,29 @@ export class ZentaoClient {
       matchedUser,
       identifiers,
       tasks,
+    };
+  }
+
+  async getMyBugs(options?: {
+    limit?: number;
+  }): Promise<{
+    matchedUser: ZentaoUser | null;
+    identifiers: string[];
+    bugs: ZentaoBug[];
+    title: string | null;
+    todoCount: JsonValue | null;
+  }> {
+    const limit = normalizePositiveInteger(options?.limit, 100);
+    const matchedUser = await this.resolveCurrentUser();
+    const identifiers = this.buildCurrentUserIdentifiers(matchedUser);
+    const { title, todoCount, bugs } = await this.listBugsAssignedToViaJsonView(identifiers, limit);
+
+    return {
+      matchedUser,
+      identifiers,
+      bugs,
+      title,
+      todoCount,
     };
   }
 
@@ -773,14 +773,24 @@ export class ZentaoClient {
       throw new Error("userid cannot be empty");
     }
 
-    const users = await this.listAllUsers();
-    const matchedUser = users.find((user) => this.userMatchesUserid(user, normalizedUserid));
-    if (!matchedUser) {
-      throw new Error(
-        `No Zentao user matched userid '${normalizedUserid}'. Checked fields: ${this.userMatchFields.join(", ")}`,
-      );
+    try {
+      const users = await this.listAllUsers();
+      const matchedUser = users.find((user) => this.userMatchesUserid(user, normalizedUserid));
+      if (matchedUser) {
+        return matchedUser;
+      }
+    } catch {
+      // Fall back to MySQL lookup below when the user list endpoint is unavailable.
     }
-    return matchedUser;
+
+    const mysqlMatchedUser = findMysqlUserByCandidates([normalizedUserid]);
+    if (mysqlMatchedUser) {
+      return mysqlMatchedUser;
+    }
+
+    throw new Error(
+      `No Zentao user matched userid '${normalizedUserid}'. Checked fields: ${this.userMatchFields.join(", ")}`,
+    );
   }
 
   async getUser(userId: number): Promise<ZentaoUser> {
@@ -800,14 +810,24 @@ export class ZentaoClient {
       throw new Error("account cannot be empty");
     }
 
-    const users = await this.listAllUsers();
-    const matchedUser = users.find(
-      (user) => normalizeComparableText(user.account) === normalizedAccount,
-    );
-    if (!matchedUser) {
-      throw new Error(`No Zentao user matched account '${account.trim()}'`);
+    try {
+      const users = await this.listAllUsers();
+      const matchedUser = users.find(
+        (user) => normalizeComparableText(user.account) === normalizedAccount,
+      );
+      if (matchedUser) {
+        return matchedUser;
+      }
+    } catch {
+      // Fall back to MySQL lookup below when the user list endpoint is unavailable.
     }
-    return matchedUser;
+
+    const mysqlMatchedUser = findMysqlUserByCandidates([account.trim()]);
+    if (mysqlMatchedUser) {
+      return mysqlMatchedUser;
+    }
+
+    throw new Error(`No Zentao user matched account '${account.trim()}'`);
   }
 
   async createUser(payload: JsonObject): Promise<ZentaoUser> {
@@ -832,7 +852,7 @@ export class ZentaoClient {
     const account = resolveSyncAccount(normalizedInput);
     if (!account) {
       throw new Error(
-        "Cannot determine Zentao account for sync. Provide account, userid/userId, or email.",
+        "Cannot determine Zentao account for sync from database mapping. Ask the user to provide their employee ID or Zentao account manually.",
       );
     }
 
@@ -877,6 +897,7 @@ export class ZentaoClient {
             ? await this.updateUser(createdUser.id, updatePayload)
             : createdUser;
 
+        this.matchedUser = finalUser;
         return {
           ok: true,
           action: hasUpdateFields ? "updated" : "created",
@@ -904,6 +925,7 @@ export class ZentaoClient {
       }),
     );
     if (Object.keys(updatePayload).length === 0) {
+      this.matchedUser = existing.user;
       return {
         ok: true,
         action: "noop",
@@ -914,16 +936,31 @@ export class ZentaoClient {
       };
     }
 
-    const updatedUser = await this.updateUser(existing.user.id, updatePayload);
-    return {
-      ok: true,
-      action: "updated",
-      matched_by: existing.matchedBy,
-      account,
-      userid,
-      update_payload: updatePayload,
-      user: updatedUser,
-    };
+    try {
+      const updatedUser = await this.updateUser(existing.user.id, updatePayload);
+      this.matchedUser = updatedUser;
+      return {
+        ok: true,
+        action: "updated",
+        matched_by: existing.matchedBy,
+        account,
+        userid,
+        update_payload: updatePayload,
+        user: updatedUser,
+      };
+    } catch (error) {
+      this.matchedUser = existing.user;
+      return {
+        ok: true,
+        action: "noop",
+        matched_by: existing.matchedBy,
+        account,
+        userid,
+        update_payload: updatePayload,
+        update_error: error instanceof Error ? error.message : String(error),
+        user: existing.user,
+      };
+    }
   }
 
   private async createBugViaWeb(payload: JsonObject): Promise<JsonObject> {
@@ -966,7 +1003,12 @@ export class ZentaoClient {
       module: String(moduleId),
       project: String(projectId),
       execution: String(executionId),
-      assignedTo: firstNonEmptyString(typeof payload.assignedTo === "string" ? payload.assignedTo : undefined, this.userid, this.account, "admin") ?? "admin",
+      assignedTo:
+        firstNonEmptyString(
+          typeof payload.assignedTo === "string" ? payload.assignedTo : undefined,
+          this.getActingAccount(),
+          "admin",
+        ) ?? "admin",
       deadline: typeof payload.deadline === "string" ? payload.deadline : "",
       feedbackBy: typeof payload.feedbackBy === "string" ? payload.feedbackBy : "",
       notifyEmail: typeof payload.notifyEmail === "string" ? payload.notifyEmail : "",
@@ -1061,7 +1103,7 @@ export class ZentaoClient {
     const formBody: Record<string, string> = {
       assignedTo,
       assignedDate: firstNonEmptyString(typeof payload.assignedDate === "string" ? payload.assignedDate : undefined, currentDateString()) ?? currentDateString(),
-      lastEditedBy: this.account ?? this.userid ?? "admin",
+      lastEditedBy: this.getActingAccount() ?? "admin",
       lastEditedDate: firstNonEmptyString(typeof payload.lastEditedDate === "string" ? payload.lastEditedDate : undefined, currentDateString()) ?? currentDateString(),
       comment,
     };
@@ -1324,14 +1366,14 @@ export class ZentaoClient {
     }
 
     const owners = {
-      PO: ensureSelectableUser(users, this.userAliases, "PO", typeof payload.PO === "string" ? payload.PO : undefined),
-      QD: ensureSelectableUser(users, this.userAliases, "QD", typeof payload.QD === "string" ? payload.QD : undefined),
-      RD: ensureSelectableUser(users, this.userAliases, "RD", typeof payload.RD === "string" ? payload.RD : undefined),
-      feedback: ensureSelectableUser(users, this.userAliases, "feedback", typeof payload.feedback === "string" ? payload.feedback : undefined),
-      ticket: ensureSelectableUser(users, this.userAliases, "ticket", typeof payload.ticket === "string" ? payload.ticket : undefined),
+      PO: ensureSelectableUser(users, "PO", typeof payload.PO === "string" ? payload.PO : undefined),
+      QD: ensureSelectableUser(users, "QD", typeof payload.QD === "string" ? payload.QD : undefined),
+      RD: ensureSelectableUser(users, "RD", typeof payload.RD === "string" ? payload.RD : undefined),
+      feedback: ensureSelectableUser(users, "feedback", typeof payload.feedback === "string" ? payload.feedback : undefined),
+      ticket: ensureSelectableUser(users, "ticket", typeof payload.ticket === "string" ? payload.ticket : undefined),
     };
-    const reviewers = normalizeUserSelections(payload.reviewer ?? payload.reviewers, users, this.userAliases, "reviewer");
-    const whitelist = normalizeUserSelections(payload.whitelist, users, this.userAliases, "whitelist");
+    const reviewers = normalizeUserSelections(payload.reviewer ?? payload.reviewers, users, "reviewer");
+    const whitelist = normalizeUserSelections(payload.whitelist, users, "whitelist");
     const acl =
       firstNonEmptyString(typeof payload.acl === "string" ? payload.acl : undefined, "open") ?? "open";
 
@@ -2006,7 +2048,12 @@ export class ZentaoClient {
       type,
       module: String(moduleId),
       story: String(storyId),
-      assignedTo: firstNonEmptyString(typeof payload.assignedTo === "string" ? payload.assignedTo : undefined, this.userid, this.account, "admin") ?? "admin",
+      assignedTo:
+        firstNonEmptyString(
+          typeof payload.assignedTo === "string" ? payload.assignedTo : undefined,
+          this.getActingAccount(),
+          "admin",
+        ) ?? "admin",
       name,
       pri: stringifyOptional(payload.pri) ?? "3",
       estimate: stringifyOptional(payload.estimate) ?? "0",
@@ -2561,6 +2608,18 @@ export class ZentaoClient {
 
     try {
       await this.createUserViaWebForm(input, createdPayload, password);
+      this.matchedUser = {
+        account,
+        realname: createdPayload.realname as string | undefined,
+        dept: createdPayload.dept as number | undefined,
+        role: createdPayload.role as string | undefined,
+        email: input.email as string | undefined,
+        mobile: input.mobile as string | undefined,
+        phone: firstNonEmptyString(
+          typeof input.phone === "string" ? input.phone : undefined,
+          typeof input.telephone === "string" ? input.telephone : undefined,
+        ),
+      };
       return {
         ok: true,
         action: "created",
@@ -2568,55 +2627,33 @@ export class ZentaoClient {
         account,
         userid,
         created_payload: createdPayload,
-        user: {
-          account,
-          realname: createdPayload.realname as string | undefined,
-          dept: createdPayload.dept as number | undefined,
-          role: createdPayload.role as string | undefined,
-          email: input.email as string | undefined,
-          mobile: input.mobile as string | undefined,
-          phone: firstNonEmptyString(
-            typeof input.phone === "string" ? input.phone : undefined,
-            typeof input.telephone === "string" ? input.telephone : undefined,
-          ),
-        },
+        user: this.matchedUser,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (isWebUserAlreadyExistsError(message)) {
+        this.matchedUser = {
+          account,
+          realname:
+            (createdPayload.realname as string | undefined) ??
+            firstNonEmptyString(
+              typeof input.realname === "string" ? input.realname : undefined,
+              typeof input.name === "string" ? input.name : undefined,
+            ),
+        };
         return {
           ok: true,
           action: "noop",
           matched_by: "account",
           account,
           userid,
-          user: {
-            account,
-            realname:
-              (createdPayload.realname as string | undefined) ??
-              firstNonEmptyString(
-                typeof input.realname === "string" ? input.realname : undefined,
-                typeof input.name === "string" ? input.name : undefined,
-              ),
-          },
+          user: this.matchedUser,
         };
       }
       throw error;
     }
   }
 
-
-  private async ensureActorCredentialsResolved(forceRefresh = false): Promise<void> {
-    if (!this.userid || this.explicitCredentialMode) {
-      return;
-    }
-
-    const credential = resolveActorCredential(this.userid, this.userAliases, forceRefresh);
-    this.account = credential.account;
-    this.password = undefined;
-    this.passwordHash = credential.passwordHash;
-    this.setSessionCacheIdentity(credential.account);
-  }
 
   private setSessionCacheIdentity(identity: string): void {
     const nextPath = buildSessionCachePath(identity);
@@ -2812,18 +2849,33 @@ export class ZentaoClient {
       return this.matchedUser;
     }
 
-    if (this.userid) {
+    const rawUserid = firstNonEmptyString(this.userid);
+    if (rawUserid) {
       try {
-        this.matchedUser = await this.findUserByUserid(this.userid);
+        this.matchedUser = await this.findUserByUserid(rawUserid);
         return this.matchedUser;
       } catch {
-        try {
-          this.matchedUser = await this.findUserByAccount(this.userid);
-          return this.matchedUser;
-        } catch {
-          this.matchedUser = this.buildInferredCurrentUser();
-          return this.matchedUser;
-        }
+        // Continue to account-based matching below.
+      }
+    }
+
+    const accountCandidates = Array.from(
+      new Set(
+        [
+          this.resolveCurrentUserAccount(),
+          rawUserid,
+          !rawUserid ? firstNonEmptyString(this.account) : undefined,
+        ]
+          .map((value) => firstNonEmptyString(value))
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+    for (const accountCandidate of accountCandidates) {
+      try {
+        this.matchedUser = await this.findUserByAccount(accountCandidate);
+        return this.matchedUser;
+      } catch {
+        // Try the next candidate.
       }
     }
 
@@ -2839,7 +2891,7 @@ export class ZentaoClient {
   }
 
   private buildInferredCurrentUser(): ZentaoUser | null {
-    const inferredAccount = firstNonEmptyString(this.userid, this.account);
+    const inferredAccount = this.resolveCurrentUserAccount();
     if (!inferredAccount) {
       return null;
     }
@@ -2850,6 +2902,24 @@ export class ZentaoClient {
       inferred: true,
       matchedBy: "identifier-fallback",
     };
+  }
+
+  private buildCurrentUserIdentifiers(matchedUser: ZentaoUser | null): string[] {
+    return buildUserIdentifiers(matchedUser, this.userid, this.resolveCurrentUserAccount());
+  }
+
+  private getActingAccount(): string | undefined {
+    return (
+      firstNonEmptyString(typeof this.matchedUser?.account === "string" ? this.matchedUser.account : undefined) ??
+      this.resolveCurrentUserAccount() ??
+      firstNonEmptyString(this.account)
+    );
+  }
+
+  private resolveCurrentUserAccount(): string | undefined {
+    return (
+      firstNonEmptyString(this.userid)
+    );
   }
 
   private async findExistingUserForSync(
@@ -2880,9 +2950,29 @@ export class ZentaoClient {
       // Continue to email matching below.
     }
 
+    const users = await this.listAllUsers();
+    const normalizedNames = Array.from(
+      new Set(
+        [
+          normalizeComparableText(input.realname),
+          normalizeComparableText(input.name),
+        ].filter(Boolean),
+      ),
+    );
+    if (normalizedNames.length > 0) {
+      const matchedUser = users.find((user) =>
+        normalizedNames.includes(normalizeComparableText(user.realname)),
+      );
+      if (matchedUser) {
+        return {
+          user: matchedUser,
+          matchedBy: "realname",
+        };
+      }
+    }
+
     const normalizedEmail = normalizeComparableText(input.email);
     if (normalizedEmail) {
-      const users = await this.listAllUsers();
       const matchedUser = users.find(
         (user) => normalizeComparableText(user.email) === normalizedEmail,
       );
@@ -2936,6 +3026,130 @@ export class ZentaoClient {
     }
 
     return tasks;
+  }
+
+  private async listBugsAssignedToViaJsonView(
+    identifiers: string[],
+    limit: number,
+  ): Promise<{
+    title: string | null;
+    todoCount: JsonValue | null;
+    bugs: ZentaoBug[];
+  }> {
+    const data = await this.getWebJsonViewData(this.toJsonRoute(this.webMyBugAssignedRoute));
+    const bugs = extractJsonObjectItems(data.bugs)
+      .sort((left, right) => Number(right.id ?? 0) - Number(left.id ?? 0)) as ZentaoBug[];
+
+    if (bugs.length === 0) {
+      return {
+        title: typeof data.title === "string" ? data.title : null,
+        todoCount: data.todoCount ?? null,
+        bugs: [],
+      };
+    }
+
+    if (identifiers.length === 0) {
+      return {
+        title: typeof data.title === "string" ? data.title : null,
+        todoCount: data.todoCount ?? null,
+        bugs: bugs.slice(0, limit),
+      };
+    }
+
+    const normalizedIdentifiers = new Set(identifiers.map(normalizeComparableText).filter(Boolean));
+    const filteredBugs = bugs.filter((bug) => {
+      return hasMatchingIdentifier(
+        [
+          bug.assignedTo,
+          bug.account,
+          bug.openedBy,
+          bug.resolvedBy,
+          bug.closedBy,
+          bug.realname,
+          typeof bug.id === "number" ? String(bug.id) : undefined,
+        ],
+        normalizedIdentifiers,
+      );
+    });
+    if (filteredBugs.length > 0) {
+      return {
+        title: typeof data.title === "string" ? data.title : null,
+        todoCount: data.todoCount ?? null,
+        bugs: filteredBugs.slice(0, limit),
+      };
+    }
+
+    const fallbackBugs = await this.listBugsAssignedToAcrossProducts(normalizedIdentifiers, limit);
+
+    return {
+      title: typeof data.title === "string" ? data.title : null,
+      todoCount: data.todoCount ?? null,
+      bugs: fallbackBugs,
+    };
+  }
+
+  private async listBugsAssignedToAcrossProducts(
+    normalizedIdentifiers: Set<string>,
+    limit: number,
+  ): Promise<ZentaoBug[]> {
+    if (normalizedIdentifiers.size === 0) {
+      return [];
+    }
+
+    const productData = await this.getWebJsonViewData("/product-all-0.json");
+    const productIds = extractNumericIdsFromUnknown(productData.products);
+    const bugsById = new Map<number, ZentaoBug>();
+
+    for (const productId of productIds) {
+      let page = 1;
+      while (bugsById.size < limit) {
+        const browseData = await this.getWebJsonViewData(
+          `/bug-browse-${productId}-all-0-id_desc-0-100-${page}.json`,
+        );
+        const pageBugs = extractJsonObjectItems(browseData.bugs) as ZentaoBug[];
+        if (pageBugs.length === 0) {
+          break;
+        }
+
+        for (const bug of pageBugs) {
+          const bugId = typeof bug.id === "number" ? bug.id : Number(bug.id ?? 0);
+          if (!Number.isFinite(bugId) || bugId <= 0 || bugsById.has(bugId)) {
+            continue;
+          }
+          if (
+            hasMatchingIdentifier(
+              [
+                bug.assignedTo,
+                bug.account,
+                bug.openedBy,
+                bug.resolvedBy,
+                bug.closedBy,
+                bug.realname,
+                String(bugId),
+              ],
+              normalizedIdentifiers,
+            )
+          ) {
+            bugsById.set(bugId, bug);
+            if (bugsById.size >= limit) {
+              break;
+            }
+          }
+        }
+
+        if (pageBugs.length < 100 || bugsById.size >= limit) {
+          break;
+        }
+        page += 1;
+      }
+      if (bugsById.size >= limit) {
+        break;
+      }
+    }
+
+    return Array.from(bugsById.values())
+      .sort((left, right) => Number(right.id ?? 0) - Number(left.id ?? 0))
+      .slice(0, limit);
   }
 
   private async loginWithJsonView(protectedJsonRoute: string): Promise<JsonObject> {
@@ -3175,7 +3389,7 @@ export class ZentaoClient {
       return candidates.some((candidate) => normalizedIdentifiers.has(normalizeComparableText(candidate)));
     });
 
-    return (filteredTasks.length > 0 ? filteredTasks : tasks).slice(0, limit);
+    return filteredTasks.slice(0, limit);
   }
 
   private async hasValidJsonSession(): Promise<boolean> {
@@ -3426,15 +3640,23 @@ export class ZentaoClient {
 }
 
 export function loadConfig(configPath = CONFIG_PATH): Config {
-  const explicitOpenclawPath = firstExistingPath([
-    process.env.OPENCLAW_ZENTAO_CONFIG_PATH,
+  const candidatePaths = [
     process.env.OPENCLAW_CONFIG_PATH,
-    OPENCLAW_ZENTAO_CONFIG_PATH,
     OPENCLAW_CONFIG_PATH,
-  ]);
-  const openclawConfig = explicitOpenclawPath
-    ? loadOpenclawSkillConfig(explicitOpenclawPath)
-    : {};
+    process.env.OPENCLAW_ZENTAO_CONFIG_PATH,
+    OPENCLAW_ZENTAO_CONFIG_PATH,
+  ].filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+
+  let openclawConfig: Config = {};
+  const seenPaths = new Set<string>();
+  for (const candidatePath of candidatePaths) {
+    if (seenPaths.has(candidatePath) || !existsSync(candidatePath)) {
+      continue;
+    }
+    seenPaths.add(candidatePath);
+    openclawConfig = mergeConfig(openclawConfig, loadOpenclawSkillConfig(candidatePath));
+  }
+
   const localConfig = existsSync(configPath)
     ? parseJson<Config>(readFileSync(configPath, "utf8"), configPath)
     : {};
@@ -3588,10 +3810,6 @@ function mergeConfig(base: Config, override: Config): Config {
     user_sync: {
       ...base.user_sync,
       ...override.user_sync,
-    },
-    user_aliases: {
-      ...(base.user_aliases ?? {}),
-      ...(override.user_aliases ?? {}),
     },
     web_routes: {
       ...base.web_routes,
@@ -4113,6 +4331,49 @@ function buildUserIdentifiers(
   );
 }
 
+function extractJsonObjectItems(value: JsonValue | undefined): JsonObject[] {
+  if (Array.isArray(value)) {
+    return value.filter(
+      (item): item is JsonObject => typeof item === "object" && item !== null && !Array.isArray(item),
+    );
+  }
+  if (typeof value === "object" && value !== null) {
+    return Object.values(value).filter(
+      (item): item is JsonObject => typeof item === "object" && item !== null && !Array.isArray(item),
+    );
+  }
+  return [];
+}
+
+function extractNumericIdsFromUnknown(value: JsonValue | undefined): number[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) =>
+        typeof item === "number"
+          ? item
+          : typeof item === "object" && item !== null && !Array.isArray(item)
+            ? Number((item as JsonObject).id ?? 0)
+            : Number.NaN,
+      )
+      .filter((item) => Number.isFinite(item) && item > 0)
+      .map((item) => Math.floor(item));
+  }
+  if (typeof value === "object" && value !== null) {
+    return Object.keys(value)
+      .map((key) => Number(key))
+      .filter((item) => Number.isFinite(item) && item > 0)
+      .map((item) => Math.floor(item));
+  }
+  return [];
+}
+
+function hasMatchingIdentifier(
+  candidates: Array<unknown>,
+  normalizedIdentifiers: Set<string>,
+): boolean {
+  return candidates.some((candidate) => normalizedIdentifiers.has(normalizeComparableText(candidate)));
+}
+
 function normalizeWecomOrgUser(input: WecomOrgUser): WecomOrgUser {
   const normalized: WecomOrgUser = {};
   for (const [key, value] of Object.entries(input)) {
@@ -4134,6 +4395,23 @@ function getWecomUserid(input: WecomOrgUser): string | null {
       typeof input.userid === "string" ? input.userid : undefined,
       typeof input.userId === "string" ? input.userId : undefined,
     ) ?? null
+  );
+}
+
+function listWecomAccountCandidates(input: WecomOrgUser): string[] {
+  return Array.from(
+    new Set(
+      [
+        typeof input.account === "string" ? input.account : undefined,
+        getWecomUserid(input) ?? undefined,
+        typeof input.alias === "string" ? input.alias : undefined,
+        typeof input.name === "string" ? input.name : undefined,
+        typeof input.realname === "string" ? input.realname : undefined,
+        extractAccountFromEmail(typeof input.email === "string" ? input.email : undefined),
+      ]
+        .map((value) => firstNonEmptyString(value))
+        .filter((value): value is string => Boolean(value)),
+    ),
   );
 }
 
@@ -4306,25 +4584,8 @@ function normalizeStringList(value: JsonValue | undefined): string[] {
   return [];
 }
 
-function normalizeUserAliasMap(value: Record<string, string> | undefined): Record<string, string> {
-  if (!value) {
-    return {};
-  }
-  const normalized: Record<string, string> = {};
-  for (const [alias, account] of Object.entries(value)) {
-    const normalizedAlias = normalizeComparableText(alias);
-    const normalizedAccount = firstNonEmptyString(account);
-    if (!normalizedAlias || !normalizedAccount) {
-      continue;
-    }
-    normalized[normalizedAlias] = normalizedAccount;
-  }
-  return normalized;
-}
-
 function ensureSelectableUser(
   users: JsonObject | null,
-  userAliases: Record<string, string>,
   fieldName: string,
   value: string | undefined,
 ): string {
@@ -4332,11 +4593,11 @@ function ensureSelectableUser(
   if (!normalized) {
     return "";
   }
-  const resolved = resolveSelectableUser(users, userAliases, normalized);
+  const resolved = resolveSelectableUser(users, normalized);
   if (!resolved) {
     const candidates = listSelectableUserCandidates(users).slice(0, 10).join(", ");
     throw new Error(
-      `Unknown Zentao account for ${fieldName}: ${normalized}${candidates ? `. Available accounts: ${candidates}` : ""}`,
+      `Unknown Zentao account for ${fieldName}: ${normalized}. Ask the user to provide their employee ID or Zentao account manually${candidates ? `. Available accounts: ${candidates}` : ""}`,
     );
   }
   return resolved;
@@ -4345,15 +4606,13 @@ function ensureSelectableUser(
 function normalizeUserSelections(
   value: JsonValue | undefined,
   users: JsonObject | null,
-  userAliases: Record<string, string>,
   fieldName: string,
 ): string[] {
-  return normalizeStringList(value).map((item) => ensureSelectableUser(users, userAliases, fieldName, item));
+  return normalizeStringList(value).map((item) => ensureSelectableUser(users, fieldName, item));
 }
 
 function resolveSelectableUser(
   users: JsonObject | null,
-  userAliases: Record<string, string>,
   rawValue: string,
 ): string | undefined {
   const direct = firstNonEmptyString(rawValue);
@@ -4365,11 +4624,6 @@ function resolveSelectableUser(
   }
 
   const normalizedInput = normalizeComparableText(direct);
-  const aliasAccount = userAliases[normalizedInput];
-  if (aliasAccount && aliasAccount in users) {
-    return aliasAccount;
-  }
-
   for (const [account, label] of Object.entries(users)) {
     if (!account || account === "closed") {
       continue;
@@ -5029,108 +5283,33 @@ function queryMysqlTsv(sql: string): string {
   ).trim();
 }
 
-function loadActorAuthCache(): ActorAuthCacheFile {
-  if (!existsSync(ACTOR_AUTH_CACHE_PATH)) {
-    return { version: 1, entries: {} };
-  }
-
-  try {
-    const parsed = parseJson<ActorAuthCacheFile>(
-      readFileSync(ACTOR_AUTH_CACHE_PATH, "utf8"),
-      ACTOR_AUTH_CACHE_PATH,
-    );
-    return {
-      version: parsed.version ?? 1,
-      entries: parsed.entries ?? {},
-    };
-  } catch {
-    return { version: 1, entries: {} };
-  }
-}
-
-function saveActorAuthCache(cache: ActorAuthCacheFile): void {
-  mkdirSync(dirname(ACTOR_AUTH_CACHE_PATH), { recursive: true });
-  writeFileSync(ACTOR_AUTH_CACHE_PATH, JSON.stringify(cache, null, 2), "utf8");
-}
-
-function buildActorCacheKey(userid: string): string {
-  return normalizeComparableText(userid) || userid.trim();
-}
-
-function readActorCredentialFromCache(userid: string): ActorAuthCacheEntry | null {
-  const cache = loadActorAuthCache();
-  const key = buildActorCacheKey(userid);
-  const entry = cache.entries[key];
-  if (!entry) {
-    return null;
-  }
-
-  const cachedAt = Date.parse(entry.cachedAt);
-  if (!Number.isFinite(cachedAt)) {
-    return null;
-  }
-
-  if (Date.now() - cachedAt > DEFAULT_ACTOR_AUTH_CACHE_TTL_MS) {
-    return null;
-  }
-
-  return entry;
-}
-
-function writeActorCredentialToCache(userid: string, credential: ActorCredential): ActorAuthCacheEntry {
-  const cache = loadActorAuthCache();
-  const key = buildActorCacheKey(userid);
-  const entry: ActorAuthCacheEntry = {
-    ...credential,
-    cacheKey: key,
-    userid,
-    cachedAt: new Date().toISOString(),
-  };
-  cache.entries[key] = entry;
-  saveActorAuthCache(cache);
-  return entry;
-}
-
-function resolveActorCredential(
-  userid: string,
-  userAliases: Record<string, string>,
-  forceRefresh = false,
-): ActorCredential {
-  const normalizedUserid = firstNonEmptyString(userid);
-  if (!normalizedUserid) {
-    throw new Error("Cannot resolve actor credential without userid");
-  }
-
-  if (!forceRefresh) {
-    const cached = readActorCredentialFromCache(normalizedUserid);
-    if (cached) {
-      return cached;
-    }
-  }
-
-  const candidates = Array.from(
+function findMysqlUserByCandidates(candidates: string[]): ZentaoUser | null {
+  const normalizedCandidates = Array.from(
     new Set(
-      [
-        normalizedUserid,
-        userAliases[normalizedUserid],
-      ]
-        .map((value) => firstNonEmptyString(value))
-        .filter((value): value is string => Boolean(value)),
+      candidates
+        .map((candidate) => firstNonEmptyString(candidate))
+        .filter((candidate): candidate is string => Boolean(candidate)),
     ),
   );
+  if (normalizedCandidates.length === 0) {
+    return null;
+  }
+
   const predicates: string[] = [];
   const orderBy: string[] = [];
-  for (const candidate of candidates) {
+  for (const candidate of normalizedCandidates) {
     predicates.push(`account = ${sqlString(candidate)}`);
     predicates.push(`weixin = ${sqlString(candidate)}`);
     predicates.push(`realname = ${sqlString(candidate)}`);
+    predicates.push(`email = ${sqlString(candidate)}`);
     orderBy.push(`WHEN account = ${sqlString(candidate)} THEN 1`);
     orderBy.push(`WHEN weixin = ${sqlString(candidate)} THEN 2`);
     orderBy.push(`WHEN realname = ${sqlString(candidate)} THEN 3`);
+    orderBy.push(`WHEN email = ${sqlString(candidate)} THEN 4`);
   }
 
   const sql = `
-SELECT account, realname, password
+SELECT id, account, realname, email, weixin
 FROM zt_user
 WHERE deleted = '0'
   AND (${predicates.join(" OR ")})
@@ -5142,31 +5321,24 @@ LIMIT 1;
 `.trim();
   const output = queryMysqlTsv(sql);
   if (!output) {
-    throw new Error(`No ZenTao credential matched userid '${normalizedUserid}'`);
+    return null;
   }
 
-  const [account, realname, passwordHash] = output.split("\t");
-  if (!account || !passwordHash) {
-    throw new Error(`Incomplete ZenTao credential row for userid '${normalizedUserid}'`);
+  const [id, account, realname, email, weixin] = output.split("\t");
+  if (!account) {
+    return null;
   }
 
-  const source =
-    account === normalizedUserid
-      ? "account"
-      : realname === normalizedUserid
-        ? "realname"
-        : "weixin-or-alias";
-  const credential = {
+  return {
+    id: Number.isFinite(Number(id)) ? Number(id) : undefined,
     account,
     realname: firstNonEmptyString(realname),
-    passwordHash,
-    source,
+    email: firstNonEmptyString(email),
+    weixin: firstNonEmptyString(weixin),
+    matchedBy: "mysql-fallback",
   };
-  writeActorCredentialToCache(normalizedUserid, credential);
-  return credential;
 }
 
 export function printJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 }
-
