@@ -1,4 +1,4 @@
-﻿{
+{
     "name": "openclaw-zentao-pack",
     "version": "1.0.0",
     "private": true,
@@ -6,7 +6,6 @@
     "scripts": {
         "build": "tsc -p tsconfig.json",
         "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-        "wecom-tasks": "npm run build && node dist/scripts/replies/wecom_task_reply.js",
         "wecom-callback": "npm run build && node dist/scripts/callbacks/wecom_callback.js",
         "wecom-contact-sync": "npm run build && node dist/scripts/callbacks/wecom_contact_sync.js",
         "sync-user": "npm run build && node dist/scripts/sync_user.js",

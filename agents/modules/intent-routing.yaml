@@ -168,7 +168,7 @@ routes:
   - intent: update-task-status
     triggers: ["更新任务状态", "开始任务", "完成任务", "关闭任务", "激活任务", "暂停任务"]
     script: update-task-status
-    required_args: [task-id, status]
+    required_args: [task, status]
 
   - intent: create-testcase
     triggers: ["创建测试用例", "新建用例", "写用例", "新增测试用例"]
@@ -203,7 +203,7 @@ routes:
   - intent: update-bug-status
     triggers: ["更新bug状态", "更新 bug状态", "解决bug", "解决 bug", "关闭bug", "关闭 bug", "激活bug", "激活 bug", "把bug解决", "把 bug 解决", "把bug关闭", "把 bug 关闭"]
     script: update-bug-status
-    required_args: [bug-id, status]
+    required_args: [bug, status]
 
   - intent: create-release
     triggers: ["创建发布", "新建发布", "发版", "新增发布", "创建版本", "新建版本"]

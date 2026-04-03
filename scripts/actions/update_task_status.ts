@@ -32,6 +32,7 @@ function optionalNumber(value: string | undefined, optionName: string): number |
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
+      task: { type: "string" },
       "task-id": { type: "string" },
       userid: { type: "string" },
       status: { type: "string" },
@@ -64,9 +65,11 @@ async function main(): Promise<void> {
     payload.leftHours = leftHours;
   }
 
+  const taskIdRaw = values.task ?? values["task-id"];
+
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
-  const result = await client.updateTaskStatus(requiredNumber(values["task-id"], "task-id"), payload);
+  const result = await client.updateTaskStatus(requiredNumber(taskIdRaw, values.task ? "task" : "task-id"), payload);
   printJson(result);
 }
 

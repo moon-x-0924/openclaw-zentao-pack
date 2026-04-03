@@ -26,7 +26,7 @@
 如果要直接按企业微信用户查询或调试：
 
 ```bash
-npm run wecom-tasks -- --userid wangwu
+npm run query-my-tasks -- --userid wangwu
 ```
 
 如果 OpenClaw 已经拿到了原始企业微信回调 JSON，建议直接走统一分发入口：
@@ -38,9 +38,21 @@ npm run wecom-callback -- --data-file examples/callbacks/tmp-callback-task.json
 也可以传入已经归一化后的回调载荷：
 
 ```bash
-npm run wecom-tasks -- --data-file examples/callbacks/tmp-callback-task.json
+npm run wecom-callback -- --data-file examples/callbacks/tmp-callback-task.json
 ```
 
+## 当前代码分层
+
+- `scripts/callbacks/wecom_callback.ts`：只负责回调入口编排，包含 payload 读取、路由选择、脚本执行、formatter 调用。
+- `scripts/callbacks/wecom_route_resolver.ts`：维护 YAML 路由加载、关键词匹配、参数提取、缺参判断。
+- `scripts/callbacks/wecom_reply_formatter.ts`：维护缺参回复、帮助回复、脚本成功/失败回复。
+
+## 后续维护建议
+
+- 新增或调整关键词、裸数字补全、参数抽取：改 `wecom_route_resolver.ts`。
+- 新增或调整回复文案：改 `wecom_reply_formatter.ts`。
+- 新增业务能力：优先新增/修改对应 `query-*` 或 `action-*` 脚本，再通过 `intent-routing.yaml` 接入。
+- `wecom_callback.ts` 尽量保持薄，不再继续堆业务特判。
 ## 支持的回调字段
 
 当前可识别的常见字段包括：

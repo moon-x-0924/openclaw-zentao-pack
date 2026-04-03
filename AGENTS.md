@@ -113,6 +113,12 @@ Reactions are lightweight social signals. Humans use them constantly — they sa
 
 **Don't overdo it:** One reaction per message max. Pick the one that fits best.
 
+## Git Notes
+
+- 默认使用中文提交信息。
+- 除非用户明确要求英文或指定格式，不要使用英文 commit message。
+
+- 用户确认提交后，默认直接推送当前分支，不再重复询问是否 push。
 ## Tools
 
 Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.

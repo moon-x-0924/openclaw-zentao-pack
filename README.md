@@ -19,7 +19,7 @@
 
 - `npm run build`
 - `npm run query-my-tasks -- --userid admin`
-- `npm run wecom-tasks -- --userid admin`
+- `npm run query-my-tasks -- --userid admin`
 - `npm run wecom-callback -- --data-file examples/callbacks/tmp-callback-task.json`
 - `npm run wecom-contact-sync`
 - `npm run query-products`

@@ -21,6 +21,7 @@ function requiredNumber(value: string | undefined, optionName: string): number {
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
+      bug: { type: "string" },
       "bug-id": { type: "string" },
       userid: { type: "string" },
       status: { type: "string" },
@@ -51,9 +52,11 @@ async function main(): Promise<void> {
   if (values["opened-build"]) payload.openedBuild = values["opened-build"];
   if (values["duplicate-bug"]) payload.duplicateBug = values["duplicate-bug"];
 
+  const bugIdRaw = values.bug ?? values["bug-id"];
+
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
-  const result = await client.updateBugStatus(requiredNumber(values["bug-id"], "bug-id"), payload);
+  const result = await client.updateBugStatus(requiredNumber(bugIdRaw, values.bug ? "bug" : "bug-id"), payload);
   printJson(result);
 }
 
