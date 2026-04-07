@@ -9,6 +9,7 @@ export interface IntentRoute {
   requiredArgs: string[];
   requiredArgsAny: string[];
   defaultArgs: Record<string, string>;
+  replyTemplate?: string;
 }
 
 export interface RouteMatch {
@@ -128,6 +129,12 @@ function parseIntentRoutes(yamlText: string): IntentRoute[] {
     if (trimmed.startsWith("required_args_any:")) {
       const value = trimmed.slice("required_args_any:".length).trim();
       current.requiredArgsAny = value.startsWith("[") ? parseInlineList(value) : [];
+      currentMap = null;
+      continue;
+    }
+
+    if (trimmed.startsWith("reply_template:")) {
+      current.replyTemplate = trimmed.slice("reply_template:".length).trim();
       currentMap = null;
       continue;
     }

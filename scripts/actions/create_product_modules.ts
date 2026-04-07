@@ -1,5 +1,5 @@
 import { parseArgs } from "node:util";
-import { printJson, type JsonObject, ZentaoClient } from "./shared/zentao_client";
+import { printJson, type JsonObject, ZentaoClient } from "../shared/zentao_client";
 
 function requiredNumber(value: string | undefined, optionName: string): number {
   if (!value) throw new Error(`Missing required option --${optionName}`);

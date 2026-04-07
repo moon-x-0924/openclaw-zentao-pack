@@ -75,7 +75,7 @@ async function dispatchRoute(match: RouteMatch, text: string, userid: string, pa
     route_args: args,
     reply_text: scriptResult.ok === false
       ? buildScriptErrorReply(route, scriptResult)
-      : buildScriptResultReply(route, scriptResult),
+      : buildScriptResultReply(route, scriptResult, userid, args),
   };
 }
 
