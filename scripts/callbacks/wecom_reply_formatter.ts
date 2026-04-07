@@ -1,4 +1,6 @@
 import { type JsonObject } from "../shared/zentao_client";
+import { resolveReplyTemplate } from "../replies/template_registry";
+import { type IntentRoute } from "./wecom_route_resolver";
 
 export interface FormatterRoute {
   intent: string;
@@ -23,12 +25,29 @@ export function buildMissingArgsReply(route: FormatterRoute, missingArgs: string
   ].join("\n");
 }
 
-export function buildScriptResultReply(route: FormatterRoute, result: JsonObject): string {
-  if (typeof result.reply_text === "string" && result.reply_text.trim()) {
+export function buildScriptResultReply(
+  route: IntentRoute,
+  result: JsonObject,
+  userid: string,
+  routeArgs: Record<string, string>,
+): string {
+  if (
+    typeof result.reply_text === "string" &&
+    result.reply_text.trim() &&
+    result.reply_text_override === true
+  ) {
     return result.reply_text.trim();
   }
 
-  return `禅道脚本执行完成：${route.script}`;
+  const template = resolveReplyTemplate(route.replyTemplate);
+
+  return template.render({
+    intent: route.intent,
+    script: route.script,
+    userid,
+    routeArgs,
+    result,
+  });
 }
 
 export function buildScriptErrorReply(route: FormatterRoute, result: JsonObject): string {

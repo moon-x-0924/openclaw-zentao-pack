@@ -15,6 +15,7 @@ routes:
     script: query-my-tasks
     default_args:
       userid: current_user
+    reply_template: query-my-tasks
 
   - intent: query-my-bugs
     triggers: ["我的bug", "我的 bug", "我的Bug", "我的 Bug", "查询我的bug", "查询我的 bug", "查我的bug", "查我的 bug", "看我的bug", "看我的 bug", "看看我的bug", "bug列表", "我的缺陷"]
