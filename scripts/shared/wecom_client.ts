@@ -76,6 +76,13 @@ interface WecomUserListResponse extends WecomApiResponse {
   userlist?: JsonValue;
 }
 
+export interface WecomMediaFile {
+  buffer: Buffer;
+  filename: string;
+  contentType: string | null;
+  mediaId: string;
+}
+
 function readWecomConfig(): WecomConfig {
   const config = loadConfig() as JsonObject;
   const rawWecom = config.wecom;
@@ -179,6 +186,74 @@ function createHttpsPostJson(requestUrl: string, payload: JsonObject): Promise<W
   });
 }
 
+function createHttpsGetBuffer(requestUrl: string): Promise<{
+  body: Buffer;
+  headers: Record<string, string | string[] | undefined>;
+  statusCode: number;
+}> {
+  return new Promise((resolve, reject) => {
+    const request = httpsRequest(
+      requestUrl,
+      {
+        method: "GET",
+      },
+      (response) => {
+        const chunks: Buffer[] = [];
+        response.on("data", (chunk) => {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+        response.on("end", () => {
+          resolve({
+            body: Buffer.concat(chunks),
+            headers: response.headers,
+            statusCode: response.statusCode ?? 500,
+          });
+        });
+      },
+    );
+
+    request.on("error", reject);
+    request.end();
+  });
+}
+
+function headerToString(value: string | string[] | undefined): string | null {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+  if (Array.isArray(value)) {
+    const joined = value.join("; ").trim();
+    return joined || null;
+  }
+  return null;
+}
+
+function inferFilenameFromHeaders(
+  headers: Record<string, string | string[] | undefined>,
+  fallbackMediaId: string,
+): string {
+  const disposition = headerToString(headers["content-disposition"]);
+  if (disposition) {
+    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match?.[1]) {
+      return decodeURIComponent(utf8Match[1]);
+    }
+
+    const basicMatch = disposition.match(/filename="?([^"]+)"?/i);
+    if (basicMatch?.[1]) {
+      return basicMatch[1];
+    }
+  }
+
+  const contentType = headerToString(headers["content-type"]) ?? "";
+  if (contentType.includes("csv")) {
+    return `${fallbackMediaId}.csv`;
+  }
+  if (contentType.includes("sheet") || contentType.includes("excel")) {
+    return `${fallbackMediaId}.xlsx`;
+  }
+  return `${fallbackMediaId}.bin`;
+}
 function ensureOk<T extends WecomApiResponse>(response: T, action: string): T {
   if ((response.errcode ?? 0) !== 0) {
     throw new Error(
@@ -368,6 +443,41 @@ export class WecomClient {
       markdown: { content },
       safe: 0,
     });
+  }
+
+  async downloadMedia(mediaId: string, preferredFilename?: string): Promise<WecomMediaFile> {
+    const normalizedMediaId = mediaId.trim();
+    if (!normalizedMediaId) {
+      throw new Error("WeCom media_id cannot be empty");
+    }
+
+    const accessToken = await this.getAccessToken();
+    const url = new URL(`${this.apiBaseUrl}/cgi-bin/media/get`);
+    url.searchParams.set("access_token", accessToken);
+    url.searchParams.set("media_id", normalizedMediaId);
+
+    const response = await createHttpsGetBuffer(url.toString());
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw new Error(`WeCom media.get failed with status ${response.statusCode}`);
+    }
+
+    const contentType = headerToString(response.headers["content-type"]);
+    if (contentType?.includes("application/json")) {
+      const payload = parseJson<WecomApiResponse>(response.body.toString("utf8"), url.toString());
+      ensureOk(payload, "media.get");
+      throw new Error("WeCom media.get returned JSON but no file content");
+    }
+
+    if (response.body.length === 0) {
+      throw new Error("WeCom media.get returned empty file content");
+    }
+
+    return {
+      buffer: response.body,
+      filename: preferredFilename?.trim() || inferFilenameFromHeaders(response.headers, normalizedMediaId),
+      contentType,
+      mediaId: normalizedMediaId,
+    };
   }
 
   private async getAccessToken(): Promise<string> {

@@ -105,6 +105,9 @@ npm run query-notification-audit -- --latest 5
 - `npm run query-testcases -- --product 1`
 - `npm run query-releases -- --product 1`
 - `npm run create-release -- --product 1 --name "示例发布" --date "2026-03-24" --desc "发布说明"`
+- `npm run import-tasks-from-excel -- --source-url "https://example.com/tasks.xlsx" --execution 12 --userid admin`
+- `npm run import-tasks-from-excel -- --source-file examples/task-import-template.csv --execution 12 --userid admin --dry-run`
+- `npm run import-tasks-from-excel -- --source-file examples/task-import-template.xlsx --execution 4 --userid admin`
 
 ## 推荐查询入口
 
@@ -144,6 +147,12 @@ npm run query-notification-audit -- --latest 5
 
 - `create-release` 现在创建成功后会直接返回创建出的 `release` 对象。
 - 不再只返回成功消息而拿不到新建发布详情。
+- `import-tasks-from-excel` 支持通过本地文件或 URL 读取 `.xlsx` / `.csv`，按表格行批量创建执行任务。
+- 企微回调现支持 URL 或附件两种入口：
+- 文本 URL：`导入任务 https://example.com/tasks.xlsx 执行 12`
+- 企微附件：上传 Excel 文件，并在消息中补 `执行 12` 之类的上下文
+- 示例模板见 `examples/task-import-template.csv`，建议至少包含 `任务名称` 列。
+- 默认会按“同一执行下任务名称完全相同”做重复导入保护，命中后跳过；如需强制重复导入，可传 `--allow-duplicates`。
 
 ## 当前配置优先级
 
