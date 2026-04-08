@@ -6,3 +6,4 @@ config.json
 .env
 *.local.json
 .opencode
+.tmp-agent-template-test/
