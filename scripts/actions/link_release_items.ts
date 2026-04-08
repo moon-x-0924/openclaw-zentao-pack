@@ -60,7 +60,20 @@ async function main(): Promise<void> {
     release: detail.release ?? detail,
   };
 
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "link-release-items",
+    release: releaseId,
+    story_ids: storyIds,
+    bug_ids: bugIds,
+    count: storyIds.length + bugIds.length,
+    message: "发布项已关联",
+    detail: result.detail,
+    raw: {
+      story_linkage: result.story_linkage ?? null,
+      bug_linkage: result.bug_linkage ?? null,
+    },
+  });
 }
 
 void main().catch((error) => {

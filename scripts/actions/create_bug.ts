@@ -96,7 +96,18 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const result = await client.createBug(payload);
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "create-bug",
+    bug_id: result.bug_id ?? result.id ?? null,
+    title: payload.title,
+    product: payload.product,
+    builds: payload.openedBuild,
+    steps: payload.steps,
+    assigned_to: payload.assignedTo ?? null,
+    message: result.message ?? result.msg ?? "Bug 已创建",
+    raw: result,
+  });
 }
 
 void main().catch((error) => {

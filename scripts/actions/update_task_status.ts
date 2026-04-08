@@ -70,7 +70,17 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const result = await client.updateTaskStatus(requiredNumber(taskIdRaw, values.task ? "task" : "task-id"), payload);
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "update-task-status",
+    task: requiredNumber(taskIdRaw, values.task ? "task" : "task-id"),
+    status,
+    comment: payload.comment ?? "",
+    consumed_hours: payload.consumedHours ?? null,
+    left_hours: payload.leftHours ?? null,
+    message: result.message ?? result.msg ?? "任务状态已更新",
+    raw: result,
+  });
 }
 
 void main().catch((error) => {

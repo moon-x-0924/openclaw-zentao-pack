@@ -41,7 +41,15 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const result = await client.assignBug(bugId, payload);
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "assign-bug",
+    bug: bugId,
+    assigned_to: payload.assignedTo,
+    comment: payload.comment ?? "",
+    message: result.message ?? result.msg ?? "Bug 已指派",
+    raw: result,
+  });
 }
 
 void main().catch((error) => {

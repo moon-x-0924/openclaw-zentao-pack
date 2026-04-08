@@ -56,7 +56,17 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const response = await client.reviewStory(requiredNumber(values.story, "story"), payload);
-  printJson(response);
+  printJson({
+    ok: true,
+    action: "review-story",
+    story: requiredNumber(values.story, "story"),
+    result,
+    comment: payload.comment ?? "",
+    assigned_to: payload.assignedTo ?? null,
+    closed_reason: payload.closedReason ?? null,
+    message: response.message ?? response.msg ?? "需求评审已完成",
+    raw: response,
+  });
 }
 
 void main().catch((error) => {

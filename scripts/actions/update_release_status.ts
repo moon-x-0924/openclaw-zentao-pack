@@ -46,7 +46,16 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const result = await client.updateReleaseStatus(requiredNumber(values.release, "release"), payload);
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "update-release-status",
+    release: requiredNumber(values.release, "release"),
+    status,
+    system: payload.system ?? null,
+    desc: payload.desc ?? "",
+    message: result.message ?? result.msg ?? "发布状态已更新",
+    raw: result,
+  });
 }
 
 void main().catch((error) => {

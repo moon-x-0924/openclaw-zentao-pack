@@ -43,7 +43,17 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const result = await client.updateStoryStatus(requiredNumber(values.story, "story"), payload);
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "update-story-status",
+    story: requiredNumber(values.story, "story"),
+    status,
+    comment: payload.comment ?? "",
+    assigned_to: payload.assignedTo ?? null,
+    closed_reason: payload.closedReason ?? null,
+    message: result.message ?? result.msg ?? "需求状态已更新",
+    raw: result,
+  });
 }
 
 void main().catch((error) => {

@@ -76,8 +76,13 @@ async function main(): Promise<void> {
 
   printJson({
     ok: true,
+    action: "create-product-with-modules",
     product: productResult,
     modules: moduleResult,
+    product_id: productId,
+    module_names: modules,
+    created_module_count: modules.length,
+    message: "产品初始化完成",
   });
 }
 

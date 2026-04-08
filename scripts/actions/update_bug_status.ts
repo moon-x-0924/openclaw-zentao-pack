@@ -57,7 +57,16 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const result = await client.updateBugStatus(requiredNumber(bugIdRaw, values.bug ? "bug" : "bug-id"), payload);
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "update-bug-status",
+    bug: requiredNumber(bugIdRaw, values.bug ? "bug" : "bug-id"),
+    status,
+    resolution: payload.resolution ?? null,
+    assigned_to: payload.assignedTo ?? null,
+    message: result.message ?? result.msg ?? "Bug 状态已更新",
+    raw: result,
+  });
 }
 
 void main().catch((error) => {

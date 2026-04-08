@@ -37,7 +37,15 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const result = await client.linkTesttaskCases(testtaskId, payload);
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "link-testtask-cases",
+    testtask: testtaskId,
+    count: payload.caseIds.length,
+    cases: payload.caseIds,
+    message: result.message ?? result.msg ?? "测试单已关联用例",
+    raw: result,
+  });
 }
 
 void main().catch((error) => {

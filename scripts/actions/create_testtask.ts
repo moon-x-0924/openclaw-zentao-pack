@@ -83,7 +83,18 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const result = await client.createTesttask(payload);
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "create-testtask",
+    testtask_id: result.testtask_id ?? result.id ?? null,
+    name: payload.name,
+    product: payload.product,
+    builds: payload.builds,
+    begin: payload.begin,
+    end: payload.end,
+    message: result.message ?? result.msg ?? "测试单已创建",
+    raw: result,
+  });
 }
 
 void main().catch((error) => {

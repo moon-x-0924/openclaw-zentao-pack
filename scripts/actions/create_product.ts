@@ -71,7 +71,17 @@ async function main(): Promise<void> {
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
   const result = await client.createProduct(payload);
-  printJson(result);
+  printJson({
+    ok: true,
+    action: "create-product",
+    name: payload.name,
+    product_id: result.product_id ?? result.id ?? null,
+    type: payload.type ?? null,
+    program: payload.program ?? null,
+    acl: payload.acl ?? null,
+    message: result.message ?? result.msg ?? "产品已创建",
+    raw: result,
+  });
 }
 
 void main().catch((error) => {
