@@ -32,7 +32,8 @@ async function main(): Promise<void> {
   });
 
   const testtaskId = requiredNumber(values.testtask, 'testtask');
-  const payload: JsonObject = { caseIds: parseCaseIds(values.cases) };
+  const caseIds = parseCaseIds(values.cases);
+  const payload: JsonObject = { caseIds };
 
   const client = new ZentaoClient({ userid: values.userid });
   await client.login(false);
@@ -41,8 +42,8 @@ async function main(): Promise<void> {
     ok: true,
     action: "link-testtask-cases",
     testtask: testtaskId,
-    count: payload.caseIds.length,
-    cases: payload.caseIds,
+    count: caseIds.length,
+    cases: caseIds,
     message: result.message ?? result.msg ?? "测试单已关联用例",
     raw: result,
   });
