@@ -93,6 +93,10 @@ function maybeWrapReplyAsTemplateCard(
     },
     task_id: `${intent}-${Date.now()}`,
     sub_title_text: truncateText(currentReplyText, 1200),
+    card_action: {
+      type: 1,
+      url: "https://work.weixin.qq.com/",
+    },
   };
 
   return {

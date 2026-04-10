@@ -1,5 +1,5 @@
 import type { JsonObject } from "../../shared/zentao_client";
-import type { ReplyTemplate } from "../template_types";
+import type { ReplyRenderContext, ReplyTemplate } from "../template_types";
 
 function getNestedValue(record: JsonObject | undefined, path: string): string | undefined {
   if (!record) return undefined;
@@ -23,7 +23,7 @@ function getNestedValue(record: JsonObject | undefined, path: string): string | 
 
 export const queryMyTasksAgentTemplate: ReplyTemplate = {
   name: "agent-query-my-tasks",
-  render(context) {
+  render(context: ReplyRenderContext) {
     const result = context.result;
     const tasks = Array.isArray(result.tasks)
       ? result.tasks.filter(
@@ -79,6 +79,10 @@ export const queryMyTasksAgentTemplate: ReplyTemplate = {
           { keyname: "角色", value: displayZentaoRole },
           ...statusCounts.slice(0, 2),
         ],
+        card_action: {
+          type: 1,
+          url: "https://work.weixin.qq.com/",
+        },
         task_id: `query-my-tasks-${context.userid}`,
       },
     });
