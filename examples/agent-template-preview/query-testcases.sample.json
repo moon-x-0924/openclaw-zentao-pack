@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "product": 11,
+  "count": 3,
+  "items": [
+    {
+      "id": 3001,
+      "title": "退款审批页展示命中规则",
+      "stage": "system",
+      "pri": "1",
+      "module": "退款审核"
+    },
+    {
+      "id": 3002,
+      "title": "风控校验失败时展示错误提示",
+      "stage": "system",
+      "pri": "1",
+      "module": "风控拦截"
+    },
+    {
+      "id": 3003,
+      "title": "审批记录页支持轨迹回放",
+      "stage": "system",
+      "pri": "2",
+      "module": "审批记录"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "type": "bug-detail",
+  "bug": 318,
+  "title": "Bug 详情 BUG#318 退款审批页提交后偶发白屏",
+  "detail": {
+    "id": 318,
+    "title": "退款审批页提交后偶发白屏",
+    "status": "active",
+    "resolution": "",
+    "severity": "2",
+    "pri": "1",
+    "product": "统一支付中台",
+    "project": "退款链路升级",
+    "execution": "2026Q2 退款链路优化",
+    "module": "退款审核",
+    "story": "201",
+    "task": "4521",
+    "case": "",
+    "testtask": "88",
+    "openedBuild": "2026.04.1",
+    "assignedTo": "zhangsan",
+    "resolvedBy": "",
+    "closedBy": "",
+    "openedBy": "lisi",
+    "openedDate": "2026-04-09 09:45:00",
+    "lastEditedDate": "2026-04-10 08:30:00",
+    "steps": "1. 进入退款审批页\n2. 填写风控命中订单\n3. 点击提交后页面白屏，无错误提示"
+  }
+}

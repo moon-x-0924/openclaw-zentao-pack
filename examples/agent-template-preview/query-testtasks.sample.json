@@ -1,0 +1,55 @@
+{
+  "ok": true,
+  "type": "testtasks",
+  "product": 11,
+  "execution": 203,
+  "project": 27,
+  "browse_type": "all",
+  "browse_product": 11,
+  "title": "测试单列表",
+  "count": 3,
+  "items": [
+    {
+      "id": 88,
+      "name": "退款风控拦截提测",
+      "status": "doing",
+      "owner": "wangwu",
+      "pri": "1",
+      "begin": "2026-04-10",
+      "end": "2026-04-15",
+      "build": "2026.04.1",
+      "buildName": "2026.04.1",
+      "execution": 203,
+      "project": 27,
+      "product": 11
+    },
+    {
+      "id": 79,
+      "name": "退款审批页兼容性测试",
+      "status": "wait",
+      "owner": "sunqi",
+      "pri": "2",
+      "begin": "2026-04-16",
+      "end": "2026-04-18",
+      "build": "2026.04.2",
+      "buildName": "2026.04.2",
+      "execution": 203,
+      "project": 27,
+      "product": 11
+    },
+    {
+      "id": 63,
+      "name": "退款历史数据回归测试",
+      "status": "done",
+      "owner": "wangwu",
+      "pri": "2",
+      "begin": "2026-04-01",
+      "end": "2026-04-05",
+      "build": "2026.03.9",
+      "buildName": "2026.03.9",
+      "execution": 198,
+      "project": 25,
+      "product": 11
+    }
+  ]
+}

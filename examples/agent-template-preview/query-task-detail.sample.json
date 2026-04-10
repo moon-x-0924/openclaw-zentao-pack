@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "type": "task-detail",
+  "task": 4521,
+  "title": "任务详情 TASK#4521 退款审核增加风控拦截",
+  "detail": {
+    "id": 4521,
+    "name": "退款审核增加风控拦截",
+    "status": "doing",
+    "assignedTo": "zhangsan",
+    "project": "统一支付中台",
+    "execution": "2026Q2 退款链路优化",
+    "story": "201",
+    "estimate": "16",
+    "consumed": "10",
+    "left": "6",
+    "pri": "1",
+    "progress": "63%",
+    "openedBy": "lisi",
+    "openedDate": "2026-04-08 10:12:00",
+    "finishedBy": "",
+    "finishedDate": "",
+    "closedBy": "",
+    "closedDate": ""
+  }
+}

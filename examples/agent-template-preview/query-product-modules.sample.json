@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "type": "product-modules",
+  "product": 11,
+  "count": 4,
+  "items": [
+    { "index": 1, "name": "退款审核" },
+    { "index": 2, "name": "风控拦截" },
+    { "index": 3, "name": "审批记录" },
+    { "index": 4, "name": "对账导出" }
+  ]
+}

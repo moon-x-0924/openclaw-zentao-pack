@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "type": "project-team",
+  "project": 27,
+  "count": 3,
+  "items": [
+    {
+      "account": "lisi",
+      "realname": "李四",
+      "role": "PM",
+      "join": "2026-03-20"
+    },
+    {
+      "account": "zhangsan",
+      "realname": "张三",
+      "role": "开发",
+      "join": "2026-03-21"
+    },
+    {
+      "account": "sunqi",
+      "realname": "孙七",
+      "role": "测试",
+      "join": "2026-03-25"
+    }
+  ]
+}

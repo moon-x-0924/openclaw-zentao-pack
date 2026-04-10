@@ -1,0 +1,37 @@
+{
+  "ok": true,
+  "type": "releases",
+  "product": 11,
+  "release_type": "all",
+  "title": "发布列表",
+  "count": 3,
+  "items": [
+    {
+      "id": 66,
+      "name": "2026.04.1 风控拦截上线",
+      "status": "normal",
+      "date": "2026-04-15",
+      "createdBy": "lisi",
+      "createdDate": "2026-04-10 09:00:00",
+      "marker": "release"
+    },
+    {
+      "id": 61,
+      "name": "2026.04.0 审批流程修复",
+      "status": "normal",
+      "date": "2026-04-08",
+      "createdBy": "wangwu",
+      "createdDate": "2026-04-05 16:30:00",
+      "marker": "hotfix"
+    },
+    {
+      "id": 54,
+      "name": "2026.03.9 历史账单修复",
+      "status": "closed",
+      "date": "2026-03-28",
+      "createdBy": "zhaoliu",
+      "createdDate": "2026-03-24 11:20:00",
+      "marker": "release"
+    }
+  ]
+}

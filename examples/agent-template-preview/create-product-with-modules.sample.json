@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "product_id": 18,
+  "product": {
+    "name": "企微禅道助手"
+  },
+  "created_module_count": 3,
+  "module_names": "消息接入, 意图路由, 卡片回复"
+}

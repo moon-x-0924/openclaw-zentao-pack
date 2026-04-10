@@ -1,6 +1,7 @@
 import { type JsonObject } from "../shared/zentao_client";
 import { resolveReplyTemplate } from "../replies/template_registry";
 import { resolveAgentReplyTemplate } from "../replies/agent_template_registry";
+import { validateAgentReplyPayload, wrapTextAsAgentTemplateCard } from "../replies/agent_templates/_helpers";
 import type { WecomMessageSource } from "../shared/wecom_payload";
 import { type IntentRoute } from "./wecom_route_resolver";
 
@@ -46,14 +47,29 @@ export function buildScriptResultReply(
     ? resolveAgentReplyTemplate(route.replyTemplate)
     : resolveReplyTemplate(route.replyTemplate);
 
-  return template.render({
+  const context = {
     intent: route.intent,
     script: route.script,
     userid,
     sourceType,
     routeArgs,
     result,
-  });
+  };
+
+  const rendered = template.render(context);
+  if (sourceType !== "agent") {
+    return rendered;
+  }
+
+  try {
+    return validateAgentReplyPayload(rendered);
+  } catch (error) {
+    return wrapTextAsAgentTemplateCard(
+      context,
+      `agent template validation failed: ${error instanceof Error ? error.message : String(error)}`,
+      `${route.replyTemplate ?? route.intent}-validation-error`,
+    );
+  }
 }
 
 export function buildScriptErrorReply(route: FormatterRoute, result: JsonObject): string {

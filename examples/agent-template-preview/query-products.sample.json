@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "type": "products",
+  "title": "产品列表",
+  "total": 3,
+  "count": 3,
+  "items": [
+    {
+      "id": 11,
+      "name": "统一支付中台",
+      "program": "支付业务线",
+      "status": "normal",
+      "PO": "lisi",
+      "QD": "wangwu",
+      "RD": "zhangsan",
+      "type": "normal"
+    },
+    {
+      "id": 8,
+      "name": "会员增长平台",
+      "program": "增长业务线",
+      "status": "normal",
+      "PO": "zhaoliu",
+      "QD": "sunqi",
+      "RD": "zhouba",
+      "type": "normal"
+    },
+    {
+      "id": 3,
+      "name": "商家运营后台",
+      "program": "商家业务线",
+      "status": "closed",
+      "PO": "chenjiu",
+      "QD": "zhouyi",
+      "RD": "wuer",
+      "type": "ops"
+    }
+  ]
+}

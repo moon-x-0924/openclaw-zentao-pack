@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "type": "executions",
+  "project": 27,
+  "count": 3,
+  "items": [
+    {
+      "id": 203,
+      "name": "退款链路升级 Sprint 4",
+      "status": "doing",
+      "begin": "2026-04-08",
+      "end": "2026-04-21",
+      "PM": "lisi"
+    },
+    {
+      "id": 198,
+      "name": "退款链路升级 Sprint 3",
+      "status": "done",
+      "begin": "2026-03-25",
+      "end": "2026-04-07",
+      "PM": "lisi"
+    },
+    {
+      "id": 191,
+      "name": "结算中心重构 Phase 1",
+      "status": "wait",
+      "begin": "2026-04-20",
+      "end": "2026-05-31",
+      "PM": "wangwu"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "ok": true,
+  "bug": 701,
+  "status": "resolved",
+  "comment": "已补充超时兜底提示并自测通过。"
+}

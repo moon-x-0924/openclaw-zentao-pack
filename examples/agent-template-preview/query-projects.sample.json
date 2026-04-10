@@ -1,0 +1,43 @@
+{
+  "ok": true,
+  "type": "projects",
+  "title": "项目列表",
+  "program": "all",
+  "status": "all",
+  "count": 3,
+  "items": [
+    {
+      "id": 27,
+      "name": "退款链路升级",
+      "parent": "",
+      "status": "doing",
+      "begin": "2026-04-01",
+      "end": "2026-05-15",
+      "PM": "lisi",
+      "hasProduct": "yes",
+      "type": "sprint"
+    },
+    {
+      "id": 22,
+      "name": "结算中心重构",
+      "parent": "",
+      "status": "wait",
+      "begin": "2026-04-20",
+      "end": "2026-06-30",
+      "PM": "wangwu",
+      "hasProduct": "yes",
+      "type": "waterfall"
+    },
+    {
+      "id": 14,
+      "name": "商家对账优化",
+      "parent": "",
+      "status": "done",
+      "begin": "2026-02-10",
+      "end": "2026-03-18",
+      "PM": "zhaoliu",
+      "hasProduct": "yes",
+      "type": "sprint"
+    }
+  ]
+}

@@ -65,6 +65,8 @@
         "assign-bug": "npm run build && node dist/scripts/actions/assign_bug.js",
         "query-regression-bugs": "npm run build && node dist/scripts/queries/query_regression_bugs.js",
         "query-closure-items": "npm run build && node dist/scripts/queries/query_closure_items.js",
+        "preview-agent-template": "npm run build && node dist/scripts/tests/preview_agent_template.js",
+        "preview-agent-template-all": "npm run build && node dist/scripts/tests/preview_agent_template.js --all-samples",
         "test-wecom-agent-card": "node scripts/tests/send_wecom_agent_card_test.mjs"
     },
     "dependencies": {

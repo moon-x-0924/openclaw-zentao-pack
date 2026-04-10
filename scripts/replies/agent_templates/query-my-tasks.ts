@@ -1,5 +1,6 @@
 import type { JsonObject } from "../../shared/zentao_client";
 import type { ReplyRenderContext, ReplyTemplate } from "../template_types";
+import { buildTextNoticeCard } from "./_helpers";
 
 function getNestedValue(record: JsonObject | undefined, path: string): string | undefined {
   if (!record) return undefined;
@@ -59,32 +60,22 @@ export const queryMyTasksAgentTemplate: ReplyTemplate = {
       return `${index + 1}. ${name} [${status}]${deadline ? ` 截止:${deadline}` : ""}`;
     });
 
-    return JSON.stringify({
-      template_card: {
-        card_type: "text_notice",
-        source: {
-          desc: "企微自建应用",
-          desc_color: 0,
-        },
-        main_title: {
-          title: `${displayUser}的任务`,
-          desc: `禅道角色：${displayZentaoRole}`,
-        },
-        sub_title_text:
-          taskLines.length > 0
-            ? taskLines.join("\n")
-            : "当前没有查询到你的任务或待办。",
-        horizontal_content_list: [
-          { keyname: "用户", value: displayUser },
-          { keyname: "角色", value: displayZentaoRole },
-          ...statusCounts.slice(0, 2),
-        ],
-        card_action: {
-          type: 1,
-          url: "https://work.weixin.qq.com/",
-        },
-        task_id: `query-my-tasks-${context.userid}`,
-      },
+    const card = buildTextNoticeCard({
+      title: `${displayUser}的任务`,
+      desc: `禅道角色：${displayZentaoRole}`,
+      body:
+        taskLines.length > 0
+          ? taskLines.join("\n")
+          : "当前没有查询到你的任务或待办。",
+      taskId: `query-my-tasks-${context.userid}`,
+      horizontalContentList: [
+        { keyname: "用户", value: displayUser },
+        { keyname: "角色", value: displayZentaoRole },
+        ...statusCounts.slice(0, 2),
+      ],
+      quoteText: taskLines.length > 0 ? "继续发送“任务详情 任务ID”查看单条详情。" : "可改查我的 Bug 或项目进展。",
     });
+
+    return JSON.stringify({ template_card: card });
   },
 };

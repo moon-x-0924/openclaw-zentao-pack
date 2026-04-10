@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "testtask": 88,
+  "count": 3,
+  "items": [
+    {
+      "id": 3001,
+      "title": "退款审批页展示命中规则",
+      "result": "pass",
+      "assignedTo": "wangwu"
+    },
+    {
+      "id": 3002,
+      "title": "风控校验失败时展示错误提示",
+      "result": "fail",
+      "assignedTo": "sunqi"
+    },
+    {
+      "id": 3003,
+      "title": "审批记录页支持轨迹回放",
+      "result": "blocked",
+      "assignedTo": "wangwu"
+    }
+  ]
+}

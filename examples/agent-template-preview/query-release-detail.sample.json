@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "type": "release-detail",
+  "release": 66,
+  "title": "2026.04.1 风控拦截上线",
+  "detail": {
+    "id": 66,
+    "name": "2026.04.1 风控拦截上线",
+    "status": "normal",
+    "date": "2026-04-15",
+    "releasedDate": "2026-04-15 22:00:00",
+    "marker": "release",
+    "product": "统一支付中台",
+    "build": "2026.04.1",
+    "stories": [
+      { "id": 201, "title": "退款审核增加风控拦截" },
+      { "id": 198, "title": "审批记录补充审计字段" }
+    ],
+    "bugs": [
+      { "id": 318, "title": "退款审批页提交后偶发白屏" }
+    ],
+    "leftBugs": [
+      { "id": 322, "title": "Safari 导出偶发失败" }
+    ],
+    "summary": "本次发布包含 2 个需求、1 个已修复 Bug，仍有 1 个低优先级遗留 Bug。",
+    "desc": "上线前已完成联调和回归，遗留 Bug 不影响主流程。",
+    "createdBy": "lisi",
+    "createdDate": "2026-04-10 09:00:00"
+  }
+}

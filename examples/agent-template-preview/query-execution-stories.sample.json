@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "type": "execution-stories",
+  "execution": 203,
+  "count": 3,
+  "items": [
+    {
+      "id": 501,
+      "title": "退款审批增加风控校验结果展示",
+      "status": "active",
+      "pri": "1",
+      "assignedTo": "zhangsan"
+    },
+    {
+      "id": 488,
+      "title": "退款拦截结果支持批量导出",
+      "status": "active",
+      "pri": "2",
+      "assignedTo": "wuer"
+    },
+    {
+      "id": 472,
+      "title": "退款历史记录增加审批轨迹",
+      "status": "closed",
+      "pri": "2",
+      "assignedTo": "zhaoliu"
+    }
+  ]
+}

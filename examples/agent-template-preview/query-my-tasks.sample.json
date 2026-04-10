@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "userid": "zhangsan",
+  "wecom_user": {
+    "name": "张三"
+  },
+  "matched_user": {
+    "account": "zhangsan",
+    "realname": "张三",
+    "role": "开发"
+  },
+  "status_counts": {
+    "doing": 2,
+    "wait": 1
+  },
+  "tasks": [
+    {
+      "id": 910,
+      "name": "对接风控校验接口",
+      "status": "doing",
+      "deadline": "2026-04-12"
+    },
+    {
+      "id": 904,
+      "name": "补充审批页埋点",
+      "status": "wait",
+      "deadline": "2026-04-14"
+    },
+    {
+      "id": 899,
+      "name": "回归退款历史列表",
+      "status": "doing",
+      "deadline": "2026-04-15"
+    }
+  ]
+}

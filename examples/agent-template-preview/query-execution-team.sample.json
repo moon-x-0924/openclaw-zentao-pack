@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "type": "execution-team",
+  "execution": 203,
+  "count": 3,
+  "items": [
+    {
+      "account": "lisi",
+      "realname": "李四",
+      "role": "迭代负责人",
+      "join": "2026-04-08"
+    },
+    {
+      "account": "zhangsan",
+      "realname": "张三",
+      "role": "后端开发",
+      "join": "2026-04-08"
+    },
+    {
+      "account": "wangwu",
+      "realname": "王五",
+      "role": "测试负责人",
+      "join": "2026-04-09"
+    }
+  ]
+}

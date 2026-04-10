@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "type": "my-bugs",
+  "userid": "zhangsan",
+  "matched_user": {
+    "account": "zhangsan",
+    "realname": "张三",
+    "role": "dev"
+  },
+  "title": "我的 Bug",
+  "count": 3,
+  "todo_count": 2,
+  "items": [
+    {
+      "id": 318,
+      "title": "退款审批页提交后偶发白屏",
+      "status": "active",
+      "severity": "2",
+      "pri": "1",
+      "assignedTo": "zhangsan",
+      "openedBy": "lisi"
+    },
+    {
+      "id": 305,
+      "title": "导出对账单按钮在 Safari 无响应",
+      "status": "resolved",
+      "severity": "3",
+      "pri": "2",
+      "assignedTo": "zhangsan",
+      "resolvedBy": "zhangsan"
+    },
+    {
+      "id": 289,
+      "title": "批量审核时提示权限不足",
+      "status": "closed",
+      "severity": "2",
+      "pri": "2",
+      "assignedTo": "zhangsan",
+      "closedBy": "wangwu"
+    }
+  ]
+}

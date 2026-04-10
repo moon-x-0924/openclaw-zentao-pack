@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "testtask": 88,
+  "detail": {
+    "status": "doing",
+    "owner": "wangwu",
+    "begin": "2026-04-10",
+    "end": "2026-04-15",
+    "product": "统一支付中台",
+    "project": "退款链路升级",
+    "execution": "Sprint 4",
+    "desc": "本轮提测覆盖退款审批、风控拦截和审批历史三块改动，重点关注规则展示、失败提示和轨迹回放。"
+  }
+}

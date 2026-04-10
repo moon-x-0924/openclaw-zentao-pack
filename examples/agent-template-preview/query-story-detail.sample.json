@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "story": 501,
+  "detail": {
+    "status": "active",
+    "pri": "1",
+    "stage": "projected",
+    "product": "统一支付中台",
+    "module": "退款审核",
+    "assignedTo": "zhangsan",
+    "spec": "退款审批页需要展示风控校验结果、命中规则和风险等级，方便运营直接判断是否放行。",
+    "verify": "1. 可展示命中规则；2. 支持失败态提示；3. 历史记录可回溯。"
+  }
+}
