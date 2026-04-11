@@ -17,6 +17,7 @@ import { classifyWecomIntentWithLlm, type LlmIntentDecision } from "./llm_intent
 import { buildMissingArgsReply, buildRouteHelpText, buildScriptErrorReply, buildScriptResultReply } from "./wecom_reply_formatter";
 import { collectMissingArgs, extractRouteArgs, findRouteByIntent, findRouteMatch, loadIntentRoutes, normalizeRouteArgs, type IntentRoute, type RouteMatch } from "./wecom_route_resolver";
 import { WecomClient } from "../shared/wecom_client";
+import { dispatchInteractiveCallback } from "./wecom_interactive_dispatcher";
 
 interface CallbackPayload extends JsonObject {
   content?: string;
@@ -358,6 +359,12 @@ async function main(): Promise<void> {
 
   if (!userid) {
     throw new Error("Cannot determine WeCom userid from callback payload.");
+  }
+
+  const interactiveResult = await dispatchInteractiveCallback(payload, userid);
+  if (interactiveResult) {
+    printJson(maybeWrapReplyAsTemplateCard(interactiveResult, replyFormat, userid));
+    return;
   }
 
   if (isImportTaskRequest(text, payload)) {

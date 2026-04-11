@@ -3,47 +3,20 @@ import path from "node:path";
 import YAML from "yaml";
 import type { JsonObject } from "../../shared/zentao_client";
 import type { ReplyRenderContext, ReplyTemplate } from "../template_types";
-
-interface TextNoticeCardAction extends JsonObject {
-  type: number;
-  url?: string;
-  appid?: string;
-  pagepath?: string;
-}
-
-interface TextNoticeMainTitle extends JsonObject {
-  title: string;
-  desc?: string;
-}
-
-interface TextNoticeHorizontalContent extends JsonObject {
-  keyname: string;
-  value?: string;
-  url?: string;
-  media_id?: string;
-  userid?: string;
-}
-
-export interface TextNoticeTemplateCard extends JsonObject {
-  card_type: "text_notice";
-  source?: {
-    desc?: string;
-    desc_color?: number;
-  };
-  main_title: TextNoticeMainTitle;
-  sub_title_text?: string;
-  horizontal_content_list?: TextNoticeHorizontalContent[];
-  quote_area?: {
-    type: number;
-    url?: string;
-    appid?: string;
-    pagepath?: string;
-    title?: string;
-    quote_text?: string;
-  };
-  card_action: TextNoticeCardAction;
-  task_id?: string;
-}
+import {
+  buildButtonInteractionCard,
+  buildMultipleInteractionCard,
+  buildTextNoticeCard,
+  buildVoteInteractionCard,
+  summarizeForInteractiveCard,
+  type AgentCardType,
+  type AgentTemplateActionDescriptor,
+  type AgentTemplateButtonSelectionDescriptor,
+  type AgentTemplateMultipleFormDescriptor,
+  type AgentTemplateVoteDescriptor,
+  type TextNoticeHorizontalContent,
+  validateTemplateCard,
+} from "./card_support";
 
 function truncateText(input: string, maxLength: number): string {
   if (input.length <= maxLength) {
@@ -76,142 +49,6 @@ function humanizeTemplateName(templateName: string): string {
     .join(" ");
 }
 
-function asNonEmptyString(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed || null;
-}
-
-function ensureCardAction(action: unknown, label: string): void {
-  if (!action || typeof action !== "object" || Array.isArray(action)) {
-    throw new Error(`${label}.card_action must be an object`);
-  }
-
-  const type = (action as JsonObject).type;
-  if (typeof type !== "number" || !Number.isInteger(type)) {
-    throw new Error(`${label}.card_action.type must be an integer`);
-  }
-
-  if (type === 1) {
-    if (!asNonEmptyString((action as JsonObject).url)) {
-      throw new Error(`${label}.card_action.url is required when type=1`);
-    }
-    return;
-  }
-
-  if (type === 2) {
-    if (!asNonEmptyString((action as JsonObject).appid) || !asNonEmptyString((action as JsonObject).pagepath)) {
-      throw new Error(`${label}.card_action.appid and pagepath are required when type=2`);
-    }
-    return;
-  }
-
-  throw new Error(`${label}.card_action.type ${type} is not supported by current validator`);
-}
-
-function ensureHorizontalContentList(list: unknown, label: string): void {
-  if (list === undefined) {
-    return;
-  }
-
-  if (!Array.isArray(list)) {
-    throw new Error(`${label}.horizontal_content_list must be an array`);
-  }
-
-  list.forEach((item, index) => {
-    if (!item || typeof item !== "object" || Array.isArray(item)) {
-      throw new Error(`${label}.horizontal_content_list[${index}] must be an object`);
-    }
-
-    if (!asNonEmptyString((item as JsonObject).keyname)) {
-      throw new Error(`${label}.horizontal_content_list[${index}].keyname is required`);
-    }
-  });
-}
-
-export function buildTextNoticeCard(input: {
-  title: string;
-  desc?: string;
-  body: string;
-  sourceDesc?: string;
-  actionUrl?: string;
-  taskId?: string;
-  horizontalContentList?: TextNoticeHorizontalContent[];
-  quoteText?: string;
-}): TextNoticeTemplateCard {
-  const title = asNonEmptyString(input.title);
-  if (!title) {
-    throw new Error("text_notice.main_title.title is required");
-  }
-
-  const body = asNonEmptyString(input.body);
-  if (!body) {
-    throw new Error("text_notice.sub_title_text is required");
-  }
-
-  return {
-    card_type: "text_notice",
-    source: {
-      desc: input.sourceDesc ?? "企微自建应用",
-      desc_color: 0,
-    },
-    main_title: {
-      title,
-      desc: input.desc,
-    },
-    sub_title_text: truncateText(body, 1200),
-    horizontal_content_list: input.horizontalContentList,
-    quote_area: input.quoteText
-      ? {
-          type: 0,
-          quote_text: truncateText(input.quoteText, 128),
-        }
-      : undefined,
-    card_action: {
-      type: 1,
-      url: input.actionUrl ?? "https://work.weixin.qq.com/",
-    },
-    task_id: input.taskId,
-  };
-}
-
-export function validateTextNoticeCard(card: unknown, label = "template_card"): TextNoticeTemplateCard {
-  if (!card || typeof card !== "object" || Array.isArray(card)) {
-    throw new Error(`${label} must be an object`);
-  }
-
-  const record = card as JsonObject;
-  if (record.card_type !== "text_notice") {
-    throw new Error(`${label}.card_type must be "text_notice"`);
-  }
-
-  const mainTitle = record.main_title;
-  if (!mainTitle || typeof mainTitle !== "object" || Array.isArray(mainTitle)) {
-    throw new Error(`${label}.main_title must be an object`);
-  }
-  if (!asNonEmptyString((mainTitle as JsonObject).title)) {
-    throw new Error(`${label}.main_title.title is required`);
-  }
-
-  if (!asNonEmptyString(record.sub_title_text)) {
-    throw new Error(`${label}.sub_title_text is required`);
-  }
-
-  ensureHorizontalContentList(record.horizontal_content_list, label);
-  ensureCardAction(record.card_action, label);
-
-  if (record.quote_area !== undefined) {
-    const quoteArea = record.quote_area;
-    if (!quoteArea || typeof quoteArea !== "object" || Array.isArray(quoteArea)) {
-      throw new Error(`${label}.quote_area must be an object`);
-    }
-  }
-
-  return record as TextNoticeTemplateCard;
-}
-
 export function validateAgentReplyPayload(replyText: string): string {
   let parsed: unknown;
   try {
@@ -229,7 +66,7 @@ export function validateAgentReplyPayload(replyText: string): string {
     throw new Error("agent reply must contain template_card");
   }
 
-  validateTextNoticeCard(templateCard, "template_card");
+  validateTemplateCard(templateCard, "template_card");
   return replyText;
 }
 
@@ -244,22 +81,13 @@ export function wrapTextAsAgentTemplateCard(
 
   const card = buildTextNoticeCard({
     title,
-    desc: `用户: ${userid}`,
+    desc: `User: ${userid}`,
     body: content.trim(),
     taskId: `${templateName}-${userid}`,
     horizontalContentList: [
-      {
-        keyname: "意图",
-        value: truncateText(context.intent, 64),
-      },
-      {
-        keyname: "脚本",
-        value: truncateText(context.script, 64),
-      },
-      {
-        keyname: "来源",
-        value: context.sourceType,
-      },
+      { keyname: "Intent", value: truncateText(context.intent, 64) },
+      { keyname: "Script", value: truncateText(context.script, 64) },
+      { keyname: "Source", value: context.sourceType },
     ],
   });
 
@@ -273,8 +101,7 @@ export function createWrappedAgentTemplate(
   return {
     name: `agent-${templateName}`,
     render(context: ReplyRenderContext): string {
-      const content = renderText(context);
-      return wrapTextAsAgentTemplateCard(context, content, templateName);
+      return wrapTextAsAgentTemplateCard(context, renderText(context), templateName);
     },
   };
 }
@@ -293,7 +120,15 @@ export interface AgentSectionConfig {
   formatter?: (context: ReplyRenderContext) => string;
 }
 
-export interface AgentListTemplateConfig {
+interface AgentTemplateSharedConfig {
+  cardType?: AgentCardType;
+  actions?: (context: ReplyRenderContext) => AgentTemplateActionDescriptor[] | undefined;
+  buttonSelection?: (context: ReplyRenderContext) => AgentTemplateButtonSelectionDescriptor | undefined;
+  form?: (context: ReplyRenderContext) => AgentTemplateMultipleFormDescriptor | undefined;
+  vote?: (context: ReplyRenderContext) => AgentTemplateVoteDescriptor | undefined;
+}
+
+export interface AgentListTemplateConfig extends AgentTemplateSharedConfig {
   name: string;
   title: (context: ReplyRenderContext) => string;
   desc?: (context: ReplyRenderContext) => string | undefined;
@@ -306,7 +141,7 @@ export interface AgentListTemplateConfig {
   quoteText?: (context: ReplyRenderContext) => string | undefined;
 }
 
-export interface AgentDetailTemplateConfig {
+export interface AgentDetailTemplateConfig extends AgentTemplateSharedConfig {
   name: string;
   title: (context: ReplyRenderContext) => string;
   desc?: (context: ReplyRenderContext) => string | undefined;
@@ -315,14 +150,7 @@ export interface AgentDetailTemplateConfig {
   quoteText?: (context: ReplyRenderContext) => string | undefined;
 }
 
-export interface AgentActionTemplateConfig {
-  name: string;
-  title: (context: ReplyRenderContext) => string;
-  desc?: (context: ReplyRenderContext) => string | undefined;
-  sections: AgentSectionConfig[];
-  metrics?: (context: ReplyRenderContext) => TextNoticeHorizontalContent[];
-  quoteText?: (context: ReplyRenderContext) => string | undefined;
-}
+export interface AgentActionTemplateConfig extends AgentDetailTemplateConfig {}
 
 export function getPathValue(record: unknown, path: string): unknown {
   if (!path) return record;
@@ -422,6 +250,79 @@ function renderSections(context: ReplyRenderContext, sections: AgentSectionConfi
     .join("\n\n");
 }
 
+function renderTemplateCardPayload(input: {
+  cardType: AgentCardType;
+  name: string;
+  context: ReplyRenderContext;
+  title: string;
+  desc?: string;
+  body: string;
+  metrics?: TextNoticeHorizontalContent[];
+  quoteText?: string;
+  actions?: AgentTemplateActionDescriptor[];
+  buttonSelection?: AgentTemplateButtonSelectionDescriptor;
+  form?: AgentTemplateMultipleFormDescriptor;
+  vote?: AgentTemplateVoteDescriptor;
+}): string {
+  const taskId = `${input.name}-${input.context.userid}`;
+
+  if (input.cardType === "text_notice") {
+    return JSON.stringify({
+      template_card: buildTextNoticeCard({
+        title: input.title,
+        desc: input.desc,
+        body: input.body,
+        taskId,
+        horizontalContentList: input.metrics,
+        quoteText: input.quoteText,
+      }),
+    });
+  }
+
+  if (input.cardType === "button_interaction") {
+    return JSON.stringify({
+      template_card: buildButtonInteractionCard({
+        title: input.title,
+        desc: input.desc,
+        body: input.body,
+        taskId,
+        horizontalContentList: input.metrics,
+        quoteText: input.quoteText,
+        buttonList: input.actions ?? [],
+        buttonSelection: input.buttonSelection,
+      }),
+    });
+  }
+
+  if (input.cardType === "multiple_interaction") {
+    if (!input.form) {
+      throw new Error(`multiple_interaction template '${input.name}' requires form()`);
+    }
+
+    return JSON.stringify({
+      template_card: buildMultipleInteractionCard({
+        title: input.title,
+        desc: summarizeForInteractiveCard(input.desc, input.body),
+        taskId,
+        form: input.form,
+      }),
+    });
+  }
+
+  if (!input.vote) {
+    throw new Error(`vote_interaction template '${input.name}' requires vote()`);
+  }
+
+  return JSON.stringify({
+    template_card: buildVoteInteractionCard({
+      title: input.title,
+      desc: summarizeForInteractiveCard(input.desc, input.body),
+      taskId,
+      vote: input.vote,
+    }),
+  });
+}
+
 export function createAgentListTemplate(config: AgentListTemplateConfig): ReplyTemplate {
   return {
     name: `agent-${config.name}`,
@@ -431,20 +332,24 @@ export function createAgentListTemplate(config: AgentListTemplateConfig): ReplyT
         ? items.slice(0, config.maxItems ?? 3).map((item, index) => config.itemRenderer(item, index, context)).join("\n")
         : config.emptyText;
 
-      const card = buildTextNoticeCard({
+      return renderTemplateCardPayload({
+        cardType: config.cardType ?? "text_notice",
+        name: config.name,
+        context,
         title: config.title(context),
         desc: config.desc?.(context),
         body,
-        taskId: `${config.name}-${context.userid}`,
-        horizontalContentList: config.metrics?.(context) ?? (
+        metrics: config.metrics?.(context) ?? (
           config.countPath
-            ? [{ keyname: "数量", value: getText(getPathValue(context.result, config.countPath), "0") }]
+            ? [{ keyname: "Count", value: getText(getPathValue(context.result, config.countPath), "0") }]
             : undefined
         ),
         quoteText: config.quoteText?.(context),
+        actions: config.actions?.(context),
+        buttonSelection: config.buttonSelection?.(context),
+        form: config.form?.(context),
+        vote: config.vote?.(context),
       });
-
-      return JSON.stringify({ template_card: card });
     },
   };
 }
@@ -453,16 +358,20 @@ export function createAgentDetailTemplate(config: AgentDetailTemplateConfig): Re
   return {
     name: `agent-${config.name}`,
     render(context: ReplyRenderContext): string {
-      const card = buildTextNoticeCard({
+      return renderTemplateCardPayload({
+        cardType: config.cardType ?? "text_notice",
+        name: config.name,
+        context,
         title: config.title(context),
         desc: config.desc?.(context),
         body: renderSections(context, config.sections),
-        taskId: `${config.name}-${context.userid}`,
-        horizontalContentList: config.metrics?.(context),
+        metrics: config.metrics?.(context),
         quoteText: config.quoteText?.(context),
+        actions: config.actions?.(context),
+        buttonSelection: config.buttonSelection?.(context),
+        form: config.form?.(context),
+        vote: config.vote?.(context),
       });
-
-      return JSON.stringify({ template_card: card });
     },
   };
 }

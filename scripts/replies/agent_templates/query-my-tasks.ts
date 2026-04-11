@@ -1,6 +1,10 @@
 import type { JsonObject } from "../../shared/zentao_client";
+import {
+  WECOM_INTERACTIVE_ACTIONS,
+  buildInteractiveActionKey,
+} from "../../callbacks/wecom_interactive_registry";
 import type { ReplyRenderContext, ReplyTemplate } from "../template_types";
-import { buildTextNoticeCard } from "./_helpers";
+import { buildButtonInteractionCard } from "./card_support";
 
 function getNestedValue(record: JsonObject | undefined, path: string): string | undefined {
   if (!record) return undefined;
@@ -37,13 +41,13 @@ export const queryMyTasksAgentTemplate: ReplyTemplate = {
       getNestedValue(result, "wecom_user.name") ??
       getNestedValue(result, "userid") ??
       context.userid ??
-      "未知用户";
+      "Unknown user";
 
-    const displayZentaoRole =
+    const displayRole =
       getNestedValue(result, "matched_user.role") ??
       getNestedValue(result, "matched_user.account") ??
       getNestedValue(result, "matched_user.realname") ??
-      "未匹配";
+      "Unmatched";
 
     const statusCounts =
       result.status_counts && typeof result.status_counts === "object" && !Array.isArray(result.status_counts)
@@ -54,26 +58,48 @@ export const queryMyTasksAgentTemplate: ReplyTemplate = {
         : [];
 
     const taskLines = tasks.slice(0, 3).map((task: JsonObject, index: number) => {
-      const name = getNestedValue(task, "name") ?? `任务${index + 1}`;
+      const name = getNestedValue(task, "name") ?? `Task ${index + 1}`;
       const status = getNestedValue(task, "status") ?? "unknown";
       const deadline = getNestedValue(task, "deadline");
-      return `${index + 1}. ${name} [${status}]${deadline ? ` 截止:${deadline}` : ""}`;
+      return `${index + 1}. ${name} [${status}]${deadline ? ` due:${deadline}` : ""}`;
     });
 
-    const card = buildTextNoticeCard({
-      title: `${displayUser}的任务`,
-      desc: `禅道角色：${displayZentaoRole}`,
+    const firstTaskId = getNestedValue(tasks[0], "id");
+    const card = buildButtonInteractionCard({
+      title: `${displayUser} tasks`,
+      desc: `Zentao role: ${displayRole}`,
       body:
         taskLines.length > 0
           ? taskLines.join("\n")
-          : "当前没有查询到你的任务或待办。",
+          : "No tasks or todos were found for the current user.",
       taskId: `query-my-tasks-${context.userid}`,
       horizontalContentList: [
-        { keyname: "用户", value: displayUser },
-        { keyname: "角色", value: displayZentaoRole },
+        { keyname: "User", value: displayUser },
+        { keyname: "Role", value: displayRole },
         ...statusCounts.slice(0, 2),
       ],
-      quoteText: taskLines.length > 0 ? "继续发送“任务详情 任务ID”查看单条详情。" : "可改查我的 Bug 或项目进展。",
+      quoteText: taskLines.length > 0
+        ? "Use the card buttons to continue with the first task or open related bugs."
+        : "Try opening your bug list or refresh this card later.",
+      buttonList: [
+        ...(firstTaskId
+          ? [{
+              label: "First task",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskOpenDetail, { task: firstTaskId }),
+              style: 1 as const,
+            }]
+          : []),
+        {
+          label: "My bugs",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskQueryMyBugs),
+          style: 2,
+        },
+        {
+          label: "Refresh",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskRefreshMine),
+          style: 2,
+        },
+      ],
     });
 
     return JSON.stringify({ template_card: card });

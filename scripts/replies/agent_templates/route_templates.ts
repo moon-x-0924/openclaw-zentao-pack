@@ -1,4 +1,8 @@
 import type { JsonObject } from "../../shared/zentao_client";
+import {
+  WECOM_INTERACTIVE_ACTIONS,
+  buildInteractiveActionKey,
+} from "../../callbacks/wecom_interactive_registry";
 import type { ReplyTemplate } from "../template_types";
 import {
   createAgentActionTemplate,
@@ -143,6 +147,30 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-bug-detail": createAgentDetailTemplate({
     name: "query-bug-detail",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const bugId = getText(getPathValue(c.result, "bug"), "");
+      if (!bugId) {
+        return [];
+      }
+      return [
+        {
+          label: "Activate",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugActivate, { bug: bugId, status: "activate" }),
+          style: 1,
+        },
+        {
+          label: "Resolve",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugResolve, { bug: bugId, status: "resolve" }),
+          style: 2,
+        },
+        {
+          label: "Close",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugClose, { bug: bugId, status: "close" }),
+          style: 4,
+        },
+      ];
+    },
     title: (c) => `Bug 详情 #${getText(getPathValue(c.result, "bug"))}`,
     sections: [
       { label: "基本信息", path: "detail", fields: [{ label: "状态", path: "status" }, { label: "解决方案", path: "resolution" }, { label: "严重程度", path: "severity" }, { label: "优先级", path: "pri" }] },
@@ -230,10 +258,28 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-my-bugs": createAgentListTemplate({
     name: "query-my-bugs",
+    cardType: "button_interaction",
     title: () => "我的 Bug",
     itemsPath: "items",
     emptyText: "当前没有查询到你的 Bug。",
     countPath: "count",
+    actions: (c) => {
+      const firstBugId = getText(getPathValue(c.result, "items.0.id"), "");
+      return [
+        ...(firstBugId
+          ? [{
+              label: "First bug",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugOpenDetail, { bug: firstBugId }),
+              style: 1 as const,
+            }]
+          : []),
+        {
+          label: "Refresh",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskQueryMyBugs),
+          style: 2,
+        },
+      ];
+    },
     metrics: (c) => [
       { keyname: "总数", value: getText(getPathValue(c.result, "count"), "0") },
       { keyname: "待处理", value: getText(getPathValue(c.result, "todo_count"), "0") },
@@ -355,6 +401,30 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-task-detail": createAgentDetailTemplate({
     name: "query-task-detail",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const taskId = getText(getPathValue(c.result, "task"), "");
+      if (!taskId) {
+        return [];
+      }
+      return [
+        {
+          label: "Start",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskStart, { task: taskId, status: "doing" }),
+          style: 1,
+        },
+        {
+          label: "Finish",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskFinish, { task: taskId, status: "done" }),
+          style: 2,
+        },
+        {
+          label: "Block",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskBlock, { task: taskId, status: "pause" }),
+          style: 4,
+        },
+      ];
+    },
     title: (c) => `任务详情 #${getText(getPathValue(c.result, "task"))}`,
     sections: [
       { label: "基本信息", path: "detail", fields: [{ label: "状态", path: "status" }, { label: "负责人", path: "assignedTo" }, { label: "优先级", path: "pri", hideIfMissing: true }] },
@@ -426,6 +496,24 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "review-story": createAgentActionTemplate({
     name: "review-story",
+    cardType: "vote_interaction",
+    vote: (c) => {
+      const storyId = getText(getPathValue(c.result, "story"), "");
+      return {
+        questionKey: "review_result",
+        mode: 1,
+        options: [
+          { id: "pass", text: "Pass" },
+          { id: "reject", text: "Reject" },
+          { id: "clarify", text: "Needs work" },
+        ],
+        submit: {
+          text: "Submit",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.storyReviewSubmit, { story: storyId }),
+        },
+        replaceText: "Review choice submitted.",
+      };
+    },
     title: () => "需求评审",
     sections: [
       { label: "需求", path: "story" },
@@ -444,6 +532,39 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "update-bug-status": createAgentActionTemplate({
     name: "update-bug-status",
+    cardType: "multiple_interaction",
+    form: (c) => {
+      const bugId = getText(getPathValue(c.result, "bug"), "");
+      const currentStatus = getText(getPathValue(c.result, "status"), "");
+      return {
+        fields: [
+          {
+            questionKey: "status",
+            title: "Select bug status",
+            selectedId: currentStatus || undefined,
+            options: [
+              { id: "activate", text: "Activate" },
+              { id: "resolve", text: "Resolve" },
+              { id: "close", text: "Close" },
+            ],
+          },
+          {
+            questionKey: "comment_mode",
+            title: "Comment strategy",
+            selectedId: "default",
+            options: [
+              { id: "default", text: "Use default note" },
+              { id: "silent", text: "No note" },
+            ],
+          },
+        ],
+        submit: {
+          text: "Apply",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugStatusSubmit, { bug: bugId }),
+        },
+        replaceText: "Bug status change submitted.",
+      };
+    },
     title: () => "Bug 状态更新",
     sections: [
       { label: "Bug", path: "bug" },
@@ -471,6 +592,40 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "update-task-status": createAgentActionTemplate({
     name: "update-task-status",
+    cardType: "multiple_interaction",
+    form: (c) => {
+      const taskId = getText(getPathValue(c.result, "task"), "");
+      const currentStatus = getText(getPathValue(c.result, "status"), "");
+      return {
+        fields: [
+          {
+            questionKey: "status",
+            title: "Select task status",
+            selectedId: currentStatus || undefined,
+            options: [
+              { id: "wait", text: "Wait" },
+              { id: "doing", text: "Doing" },
+              { id: "done", text: "Done" },
+              { id: "pause", text: "Blocked" },
+            ],
+          },
+          {
+            questionKey: "comment_mode",
+            title: "Comment strategy",
+            selectedId: "default",
+            options: [
+              { id: "default", text: "Use default note" },
+              { id: "silent", text: "No note" },
+            ],
+          },
+        ],
+        submit: {
+          text: "Apply",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskStatusSubmit, { task: taskId }),
+        },
+        replaceText: "Task status change submitted.",
+      };
+    },
     title: () => "任务状态更新",
     sections: [
       { label: "任务", path: "task" },
