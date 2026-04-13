@@ -101,11 +101,6 @@ export const queryMyTasksAgentTemplate: ReplyTemplate = {
           key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskQueryMyBugs),
           style: 2,
         },
-        {
-          label: "刷新任务",
-          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskRefreshMine),
-          style: 2,
-        },
       ],
     });
 

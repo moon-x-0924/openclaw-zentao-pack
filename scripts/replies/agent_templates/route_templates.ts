@@ -292,13 +292,8 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
                 style: 1 as const,
               }]
             : []),
-          {
-            label: "刷新Bug",
-            key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskQueryMyBugs),
-            style: 2,
-          },
-      ];
-    },
+        ];
+      },
     metrics: (c) => [
       { keyname: "总数", value: getText(getPathValue(c.result, "count"), "0") },
       { keyname: "待处理", value: getText(getPathValue(c.result, "todo_count"), "0") },

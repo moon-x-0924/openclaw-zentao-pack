@@ -21,8 +21,8 @@ Source: [intent-routing.yaml](/D:/StudioWorkSpace/openclaw/openclaw-zentao-pack/
 
 | No. | intent | card_type | test keyword | interaction copy | state rule |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `query-my-tasks` | `button_interaction` | `我的任务` | `查看首条任务 / 查看我的Bug / 刷新任务` | `列表导航卡，不按任务状态裁剪` |
-| 2 | `query-my-bugs` | `button_interaction` | `我的bug` | `查看首条Bug / 刷新Bug` | `列表导航卡，不按Bug状态裁剪` |
+| 1 | `query-my-tasks` | `button_interaction` | `我的任务` | `查看首条任务 / 查看我的Bug` | `列表导航卡，不按任务状态裁剪` |
+| 2 | `query-my-bugs` | `button_interaction` | `我的bug` | `查看首条Bug` | `列表导航卡，不按Bug状态裁剪` |
 | 3 | `query-products` | `text_notice` | `产品列表` | `-` | `-` |
 | 4 | `query-product-modules` | `text_notice` | `产品模块 1` | `-` | `-` |
 | 5 | `query-projects` | `text_notice` | `项目列表` | `-` | `-` |
