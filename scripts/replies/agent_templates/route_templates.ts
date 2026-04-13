@@ -340,7 +340,7 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
     actions: (c) => {
       const firstTaskId = getText(getPathValue(c.result, "items.0.id"), "");
       return [
-        buildRouteAction("鏌ョ湅棣栨潯浠诲姟", WECOM_INTERACTIVE_ACTIONS.taskOpenDetail, { task: firstTaskId }, 1),
+        buildRouteAction("查看首条任务", WECOM_INTERACTIVE_ACTIONS.taskOpenDetail, { task: firstTaskId }, 1),
       ].filter((action): action is NonNullable<typeof action> => Boolean(action));
     },
     title: () => "执行任务列表",
@@ -460,17 +460,17 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
     actions: (c) => {
       const firstStoryId = getText(getPathValue(c.result, "items.0.id"), "");
       return [
-        buildRouteAction("??????", WECOM_INTERACTIVE_ACTIONS.storyOpenDetail, { story: firstStoryId }, 1),
+        buildRouteAction("查看首条需求", WECOM_INTERACTIVE_ACTIONS.storyOpenDetail, { story: firstStoryId }, 1),
       ].filter((action): action is NonNullable<typeof action> => Boolean(action));
     },
-    title: () => "????",
+    title: () => "产品需求",
     itemsPath: "items",
     countPath: "count",
-    emptyText: "??????????",
+    emptyText: "当前没有查询到需求。",
     itemRenderer: (item, index) => renderIdTitleLine(item, index, "id", "title", [
-      { label: "??", path: "status" },
-      { label: "???", path: "pri" },
-      { label: "???", path: "assignedTo", hideIfMissing: true },
+      { label: "状态", path: "status" },
+      { label: "优先级", path: "pri" },
+      { label: "负责人", path: "assignedTo", hideIfMissing: true },
     ]),
   }),
   "query-products": createAgentListTemplate({
@@ -575,7 +575,7 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
     actions: (c) => {
       const firstReleaseId = getText(getPathValue(c.result, "items.0.id"), "");
       return [
-        buildRouteAction("鏌ョ湅棣栨潯鍙戝竷", WECOM_INTERACTIVE_ACTIONS.releaseOpenDetail, { release: firstReleaseId }, 1),
+        buildRouteAction("查看首条发布", WECOM_INTERACTIVE_ACTIONS.releaseOpenDetail, { release: firstReleaseId }, 1),
       ].filter((action): action is NonNullable<typeof action> => Boolean(action));
     },
     title: () => "发布列表",
@@ -740,8 +740,8 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
       };
 
       return [
-        buildRouteAction("鏌ョ湅鐢ㄤ緥", WECOM_INTERACTIVE_ACTIONS.testtaskCasesOpen, { testtask: testtaskId }, 1),
-        buildRouteAction("鏌ョ湅鍑嗗嚭", WECOM_INTERACTIVE_ACTIONS.testExitReadinessOpen, contextPayload, 2),
+        buildRouteAction("查看用例", WECOM_INTERACTIVE_ACTIONS.testtaskCasesOpen, { testtask: testtaskId }, 1),
+        buildRouteAction("查看准出", WECOM_INTERACTIVE_ACTIONS.testExitReadinessOpen, contextPayload, 2),
       ].filter((action): action is NonNullable<typeof action> => Boolean(action));
     },
     title: (c) => `测试单详情 #${getText(getPathValue(c.result, "testtask"))}`,
@@ -757,25 +757,25 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
     actions: (c) => {
       const firstTesttaskId = getText(getPathValue(c.result, "items.0.id"), "");
       return [
-        buildRouteAction("???????", WECOM_INTERACTIVE_ACTIONS.testtaskOpenDetail, { testtask: firstTesttaskId }, 1),
-        buildRouteAction("??????", WECOM_INTERACTIVE_ACTIONS.testtaskCasesOpen, { testtask: firstTesttaskId }, 2),
+        buildRouteAction("查看首条测试单", WECOM_INTERACTIVE_ACTIONS.testtaskOpenDetail, { testtask: firstTesttaskId }, 1),
+        buildRouteAction("查看首条用例", WECOM_INTERACTIVE_ACTIONS.testtaskCasesOpen, { testtask: firstTesttaskId }, 2),
       ].filter((action): action is NonNullable<typeof action> => Boolean(action));
     },
-    title: () => "?????",
+    title: () => "测试单列表",
     itemsPath: "items",
     countPath: "count",
-    emptyText: "???????????",
+    emptyText: "当前没有查询到测试单。",
     metrics: (c) => [
-      { keyname: "??", value: getText(getPathValue(c.result, "count"), "0") },
-      { keyname: "??", value: getText(getPathValue(c.result, "execution"), "-") },
-      { keyname: "??", value: getText(getPathValue(c.result, "project"), "-") },
+      { keyname: "数量", value: getText(getPathValue(c.result, "count"), "0") },
+      { keyname: "执行", value: getText(getPathValue(c.result, "execution"), "-") },
+      { keyname: "项目", value: getText(getPathValue(c.result, "project"), "-") },
     ],
-    quoteText: () => "??????????? ID???????? ID????????",
+    quoteText: () => "可继续发送“测试单详情 ID”或“测试单用例 ID”查看测试进展。",
     itemRenderer: (item, index) => renderIdTitleLine(item, index, "id", "name", [
-      { label: "??", path: "status" },
-      { label: "???", path: "owner", hideIfMissing: true },
-      { label: "??", path: "begin", hideIfMissing: true },
-      { label: "??", path: "end", hideIfMissing: true },
+      { label: "状态", path: "status" },
+      { label: "负责人", path: "owner", hideIfMissing: true },
+      { label: "开始", path: "begin", hideIfMissing: true },
+      { label: "结束", path: "end", hideIfMissing: true },
     ]),
   }),
   "review-story": createAgentActionTemplate({
