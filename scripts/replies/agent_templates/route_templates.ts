@@ -173,7 +173,11 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
         ...(allowedActions.has("resolve")
           ? [{
               label: "解决Bug",
-              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugResolve, { bug: bugId, status: "resolve" }),
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugResolve, {
+                bug: bugId,
+                status: "resolve",
+                resolution: "fixed",
+              }),
               style: 2 as const,
             }]
           : []),
