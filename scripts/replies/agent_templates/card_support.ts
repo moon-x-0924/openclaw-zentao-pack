@@ -102,6 +102,7 @@ export interface ButtonInteractionTemplateCard extends JsonObject {
   sub_title_text?: string;
   horizontal_content_list?: TextNoticeHorizontalContent[];
   quote_area?: CommonQuoteArea;
+  card_action: CommonCardAction;
   button_selection?: ButtonSelection;
   button_list: ButtonInteractionItem[];
   task_id: string;
@@ -354,6 +355,7 @@ export function buildButtonInteractionCard(input: {
   desc?: string;
   body?: string;
   sourceDesc?: string;
+  actionUrl?: string;
   taskId?: string;
   horizontalContentList?: TextNoticeHorizontalContent[];
   quoteText?: string;
@@ -372,6 +374,7 @@ export function buildButtonInteractionCard(input: {
     sub_title_text: body ? truncateText(body, 1200) : undefined,
     horizontal_content_list: input.horizontalContentList,
     quote_area: buildQuoteArea(input.quoteText),
+    card_action: { type: 1, url: input.actionUrl ?? "https://work.weixin.qq.com/" },
     button_selection: input.buttonSelection ? {
       question_key: input.buttonSelection.questionKey,
       title: input.buttonSelection.title,
@@ -455,6 +458,7 @@ export function validateTemplateCard(card: unknown, label = "template_card"): Ag
   if (record.card_type === "button_interaction") {
     ensureMainTitle(record.main_title, label);
     ensureHorizontalContentList(record.horizontal_content_list, label);
+    ensureCardAction(record.card_action, label);
     ensureButtonList(record.button_list, label);
     if (record.button_selection) {
       const buttonSelection = ensureObject(record.button_selection, `${label}.button_selection`);
