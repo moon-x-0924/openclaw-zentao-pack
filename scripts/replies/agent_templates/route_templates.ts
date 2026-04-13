@@ -54,13 +54,17 @@ function buildRouteAction(
   payload: Record<string, string>,
   style: 1 | 2 | 3 | 4,
 ) {
-  if (Object.keys(payload).length === 0) {
+  const normalizedPayload = Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => typeof value === "string" && value.trim().length > 0),
+  );
+
+  if (Object.keys(normalizedPayload).length === 0) {
     return null;
   }
 
   return {
     label,
-    key: buildInteractiveActionKey(actionKey, payload),
+    key: buildInteractiveActionKey(actionKey, normalizedPayload),
     style,
   };
 }
