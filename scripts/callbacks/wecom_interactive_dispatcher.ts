@@ -14,6 +14,10 @@ import {
   parseInteractiveActionKey,
 } from "./wecom_interactive_registry";
 import {
+  validateInteractiveAction,
+  type InteractiveEntityType,
+} from "./wecom_interactive_rules";
+import {
   hasHandledInteractiveOperation,
   markInteractiveOperationHandled,
 } from "./wecom_interactive_state";
@@ -257,6 +261,77 @@ function buildInteractiveReply(message: string, extra: JsonObject = {}): JsonObj
   } satisfies JsonObject;
 }
 
+function normalizeStatus(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim().toLowerCase();
+  return trimmed || undefined;
+}
+
+function resolveEntityQuery(actionKey: string, payload: Record<string, string>): {
+  entityType: InteractiveEntityType;
+  id: string;
+  routeScript: string;
+} | null {
+  if (actionKey.startsWith("task.status.") && payload.task) {
+    return { entityType: "task", id: payload.task, routeScript: "query-task-detail" };
+  }
+  if (actionKey.startsWith("bug.status.") && payload.bug) {
+    return { entityType: "bug", id: payload.bug, routeScript: "query-bug-detail" };
+  }
+  if (actionKey === "story.review.submit" && payload.story) {
+    return { entityType: "story", id: payload.story, routeScript: "query-story-detail" };
+  }
+  return null;
+}
+
+function extractEntityStatus(entityType: InteractiveEntityType, result: JsonObject): string | undefined {
+  const detail = result.detail && typeof result.detail === "object" && !Array.isArray(result.detail)
+    ? result.detail as JsonObject
+    : undefined;
+
+  if (entityType === "task" || entityType === "bug" || entityType === "story") {
+    return normalizeStatus(detail?.status ?? result.status);
+  }
+  return undefined;
+}
+
+function fetchCurrentEntityStatus(actionKey: string, payload: Record<string, string>, userid: string): {
+  entityType: InteractiveEntityType;
+  status?: string;
+} | null {
+  const entityQuery = resolveEntityQuery(actionKey, payload);
+  if (!entityQuery) {
+    return null;
+  }
+
+  const route = findRouteByScript(entityQuery.routeScript);
+  if (!route) {
+    return {
+      entityType: entityQuery.entityType,
+      status: undefined,
+    };
+  }
+
+  const queryArgs = {
+    userid,
+    [entityQuery.entityType]: entityQuery.id,
+  };
+  const scriptResult = runScript(route, queryArgs);
+  if (scriptResult.ok === false) {
+    return {
+      entityType: entityQuery.entityType,
+      status: undefined,
+    };
+  }
+
+  return {
+    entityType: entityQuery.entityType,
+    status: extractEntityStatus(entityQuery.entityType, scriptResult),
+  };
+}
+
 export async function dispatchInteractiveCallback(
   payload: WecomMessagePayload,
   userid: string,
@@ -358,6 +433,47 @@ export async function dispatchInteractiveCallback(
   }
 
   const args = buildInteractiveRouteArgs(parsedAction.actionKey, parsedAction.payload, event, userid);
+  const currentEntityState = fetchCurrentEntityStatus(parsedAction.actionKey, args, userid);
+  if (currentEntityState) {
+    const validation = validateInteractiveAction({
+      actionKey: parsedAction.actionKey,
+      entityType: currentEntityState.entityType,
+      currentStatus: currentEntityState.status,
+      targetStatus: args.status ?? args.result,
+    });
+    if (!validation.allowed) {
+      appendInteractiveAudit({
+        userid,
+        task_id: event.taskId || buildOperationTaskId(event, parsedAction.payload),
+        action_key: parsedAction.actionKey,
+        operation_id: operationId,
+        status: "failed",
+        route_script: route.script,
+        message: validation.reason ?? "interactive action denied by state rules",
+        payload: {
+          ...args,
+          current_status: currentEntityState.status,
+        },
+      });
+      return {
+        ok: false,
+        userid,
+        message_source: sourceType,
+        route_source: "interactive",
+        intent: route.intent,
+        matched_by: `interactive:${parsedAction.actionKey}`,
+        route_script: route.script,
+        route_args: args,
+        interactive_action: parsedAction.actionKey,
+        interactive_operation_id: operationId,
+        interactive_task_id: event.taskId,
+        interactive_selected: buildSelectionMap(event),
+        current_status: currentEntityState.status ?? null,
+        reply_text: validation.reason ?? "当前状态不允许执行该操作，请刷新卡片后重试。",
+      } satisfies JsonObject;
+    }
+  }
+
   const missingArgs = collectMissingArgs(route, args);
   if (missingArgs.length > 0) {
     appendInteractiveAudit({

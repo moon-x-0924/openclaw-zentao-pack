@@ -3,6 +3,13 @@ import {
   WECOM_INTERACTIVE_ACTIONS,
   buildInteractiveActionKey,
 } from "../../callbacks/wecom_interactive_registry";
+import {
+  canReviewStoryStatus,
+  getBugAllowedActions,
+  getBugAllowedTargetStatuses,
+  getTaskAllowedActions,
+  getTaskAllowedTargetStatuses,
+} from "../../callbacks/wecom_interactive_rules";
 import type { ReplyTemplate } from "../template_types";
 import {
   createAgentActionTemplate,
@@ -150,25 +157,33 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
     cardType: "button_interaction",
     actions: (c) => {
       const bugId = getText(getPathValue(c.result, "bug"), "");
+      const currentStatus = getText(getPathValue(c.result, "detail.status"), "").toLowerCase();
+      const allowedActions = new Set(getBugAllowedActions(currentStatus));
       if (!bugId) {
         return [];
       }
-        return [
-          {
-            label: "激活Bug",
-            key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugActivate, { bug: bugId, status: "activate" }),
-            style: 1,
-          },
-          {
-            label: "解决Bug",
-            key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugResolve, { bug: bugId, status: "resolve" }),
-            style: 2,
-          },
-          {
-            label: "关闭Bug",
-            key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugClose, { bug: bugId, status: "close" }),
-            style: 4,
-          },
+      return [
+        ...(allowedActions.has("activate")
+          ? [{
+              label: "激活Bug",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugActivate, { bug: bugId, status: "activate" }),
+              style: 1 as const,
+            }]
+          : []),
+        ...(allowedActions.has("resolve")
+          ? [{
+              label: "解决Bug",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugResolve, { bug: bugId, status: "resolve" }),
+              style: 2 as const,
+            }]
+          : []),
+        ...(allowedActions.has("close")
+          ? [{
+              label: "关闭Bug",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.bugClose, { bug: bugId, status: "close" }),
+              style: 4 as const,
+            }]
+          : []),
       ];
     },
     title: (c) => `Bug 详情 #${getText(getPathValue(c.result, "bug"))}`,
@@ -404,25 +419,33 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
     cardType: "button_interaction",
     actions: (c) => {
       const taskId = getText(getPathValue(c.result, "task"), "");
+      const currentStatus = getText(getPathValue(c.result, "detail.status"), "").toLowerCase();
+      const allowedActions = new Set(getTaskAllowedActions(currentStatus));
       if (!taskId) {
         return [];
       }
-        return [
-          {
-            label: "开始任务",
-            key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskStart, { task: taskId, status: "doing" }),
-            style: 1,
-          },
-          {
-            label: "完成任务",
-            key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskFinish, { task: taskId, status: "done" }),
-            style: 2,
-          },
-          {
-            label: "阻塞任务",
-            key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskBlock, { task: taskId, status: "pause" }),
-            style: 4,
-          },
+      return [
+        ...(allowedActions.has("start")
+          ? [{
+              label: "开始任务",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskStart, { task: taskId, status: "doing" }),
+              style: 1 as const,
+            }]
+          : []),
+        ...(allowedActions.has("finish")
+          ? [{
+              label: "完成任务",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskFinish, { task: taskId, status: "done" }),
+              style: 2 as const,
+            }]
+          : []),
+        ...(allowedActions.has("block")
+          ? [{
+              label: "阻塞任务",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.taskBlock, { task: taskId, status: "pause" }),
+              style: 4 as const,
+            }]
+          : []),
       ];
     },
     title: (c) => `任务详情 #${getText(getPathValue(c.result, "task"))}`,
@@ -499,6 +522,19 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
     cardType: "vote_interaction",
     vote: (c) => {
       const storyId = getText(getPathValue(c.result, "story"), "");
+      const currentStatus = getText(getPathValue(c.result, "detail.status"), getText(getPathValue(c.result, "status"), "")).toLowerCase();
+      if (!canReviewStoryStatus(currentStatus)) {
+        return {
+          questionKey: "review_result",
+          mode: 1,
+          options: [],
+          submit: {
+            text: "提交评审",
+            key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.storyReviewSubmit, { story: storyId }),
+          },
+          replaceText: "评审结果已提交",
+        };
+      }
       return {
         questionKey: "review_result",
         mode: 1,
@@ -536,6 +572,7 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
     form: (c) => {
       const bugId = getText(getPathValue(c.result, "bug"), "");
       const currentStatus = getText(getPathValue(c.result, "status"), "");
+      const allowedStatuses = new Set(getBugAllowedTargetStatuses(currentStatus));
       return {
         fields: [
           {
@@ -543,9 +580,9 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
             title: "选择Bug状态",
             selectedId: currentStatus || undefined,
             options: [
-              { id: "activate", text: "激活" },
-              { id: "resolve", text: "已解决" },
-              { id: "close", text: "已关闭" },
+              ...(allowedStatuses.has("activate") ? [{ id: "activate", text: "激活" }] : []),
+              ...(allowedStatuses.has("resolve") ? [{ id: "resolve", text: "已解决" }] : []),
+              ...(allowedStatuses.has("close") ? [{ id: "close", text: "已关闭" }] : []),
             ],
           },
           {
@@ -596,6 +633,7 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
     form: (c) => {
       const taskId = getText(getPathValue(c.result, "task"), "");
       const currentStatus = getText(getPathValue(c.result, "status"), "");
+      const allowedStatuses = new Set(getTaskAllowedTargetStatuses(currentStatus));
       return {
         fields: [
           {
@@ -603,10 +641,10 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
             title: "选择任务状态",
             selectedId: currentStatus || undefined,
             options: [
-              { id: "wait", text: "待处理" },
-              { id: "doing", text: "进行中" },
-              { id: "done", text: "已完成" },
-              { id: "pause", text: "已阻塞" },
+              ...(allowedStatuses.has("wait") ? [{ id: "wait", text: "待处理" }] : []),
+              ...(allowedStatuses.has("doing") ? [{ id: "doing", text: "进行中" }] : []),
+              ...(allowedStatuses.has("done") ? [{ id: "done", text: "已完成" }] : []),
+              ...(allowedStatuses.has("pause") ? [{ id: "pause", text: "已阻塞" }] : []),
             ],
           },
           {

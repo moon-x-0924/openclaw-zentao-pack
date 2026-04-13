@@ -273,6 +273,11 @@ function renderTemplateCardPayload(input: {
 }): string {
   const taskId = buildUniqueTaskId(input.name, input.context.userid);
 
+  const fallbackBody = truncateText(
+    input.body.trim() || input.desc?.trim() || "当前状态暂无可执行操作，请刷新后重试。",
+    1200,
+  );
+
   if (input.cardType === "text_notice") {
     return JSON.stringify({
       template_card: buildTextNoticeCard({
@@ -287,6 +292,19 @@ function renderTemplateCardPayload(input: {
   }
 
   if (input.cardType === "button_interaction") {
+    if (!input.actions || input.actions.length === 0) {
+      return JSON.stringify({
+        template_card: buildTextNoticeCard({
+          title: input.title,
+          desc: input.desc,
+          body: fallbackBody,
+          taskId,
+          horizontalContentList: input.metrics,
+          quoteText: input.quoteText,
+        }),
+      });
+    }
+
     return JSON.stringify({
       template_card: buildButtonInteractionCard({
         title: input.title,
@@ -302,8 +320,17 @@ function renderTemplateCardPayload(input: {
   }
 
   if (input.cardType === "multiple_interaction") {
-    if (!input.form) {
-      throw new Error(`multiple_interaction template '${input.name}' requires form()`);
+    if (!input.form || input.form.fields.length === 0 || input.form.fields.some((field) => field.options.length === 0)) {
+      return JSON.stringify({
+        template_card: buildTextNoticeCard({
+          title: input.title,
+          desc: input.desc,
+          body: fallbackBody,
+          taskId,
+          horizontalContentList: input.metrics,
+          quoteText: input.quoteText,
+        }),
+      });
     }
 
     return JSON.stringify({
@@ -316,8 +343,17 @@ function renderTemplateCardPayload(input: {
     });
   }
 
-  if (!input.vote) {
-    throw new Error(`vote_interaction template '${input.name}' requires vote()`);
+  if (!input.vote || input.vote.options.length === 0) {
+    return JSON.stringify({
+      template_card: buildTextNoticeCard({
+        title: input.title,
+        desc: input.desc,
+        body: fallbackBody,
+        taskId,
+        horizontalContentList: input.metrics,
+        quoteText: input.quoteText,
+      }),
+    });
   }
 
   return JSON.stringify({
