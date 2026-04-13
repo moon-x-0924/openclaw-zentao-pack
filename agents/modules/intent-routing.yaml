@@ -76,6 +76,13 @@ routes:
     reply_template: query-product-stories
     required_args: [product]
 
+  - intent: query-my-stories
+    triggers: ["我的需求", "查我的需求", "看我的需求", "我负责的需求"]
+    script: query-my-stories
+    reply_template: query-my-stories
+    default_args:
+      userid: current_user
+
   - intent: query-story-detail
     triggers: ["查需求详情", "需求详情", "看需求详情", "需求明细"]
     script: query-story-detail

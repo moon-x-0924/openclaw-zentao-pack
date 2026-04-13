@@ -347,6 +347,15 @@ async function dispatchRoute(match: RouteMatch, text: string, userid: string, pa
   };
 }
 
+function shouldFallbackToMyStories(match: RouteMatch, text: string, args: Record<string, string>): boolean {
+  if (match.route.intent !== "query-product-stories" || args.product) {
+    return false;
+  }
+
+  const normalized = text.trim().replace(/\s+/gu, "");
+  return normalized === "查需求" || normalized === "看需求" || normalized === "需求列表";
+}
+
 function resolveRouteArgsWithLlmRepair(input: {
   text: string;
   userid: string;
@@ -364,6 +373,15 @@ function resolveRouteArgsWithLlmRepair(input: {
   }
 
   if (!input.llmDecision?.is_zentao_request) {
+    if (shouldFallbackToMyStories(input.match, input.text, baseArgs)) {
+      const myStoriesRoute = findRouteByIntent("query-my-stories", input.routes);
+      if (myStoriesRoute) {
+        return {
+          match: { route: myStoriesRoute, trigger: "fallback-my-stories" },
+          args: extractRouteArgs(input.text, myStoriesRoute, input.userid),
+        };
+      }
+    }
     return null;
   }
 
@@ -382,6 +400,15 @@ function resolveRouteArgsWithLlmRepair(input: {
   const candidateMissingArgs = collectMissingArgs(candidateRoute, candidateArgs);
 
   if (candidateMissingArgs.length >= baseMissingArgs.length) {
+    if (shouldFallbackToMyStories(input.match, input.text, baseArgs)) {
+      const myStoriesRoute = findRouteByIntent("query-my-stories", input.routes);
+      if (myStoriesRoute) {
+        return {
+          match: { route: myStoriesRoute, trigger: "fallback-my-stories" },
+          args: extractRouteArgs(input.text, myStoriesRoute, input.userid),
+        };
+      }
+    }
     return null;
   }
 

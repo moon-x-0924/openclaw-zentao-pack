@@ -1,5 +1,6 @@
 import type { ReplyTemplate } from "./template_types";
 import { loadAgentTemplateNamesFromIntentRouting } from "./agent_templates/_helpers";
+import { queryMyStoriesAgentTemplate } from "./agent_templates/query-my-stories";
 import { queryMyTasksAgentTemplate } from "./agent_templates/query-my-tasks";
 import { genericAgentFallbackTemplate } from "./agent_templates/generic-fallback";
 import { routeAgentTemplates } from "./agent_templates/route_templates";
@@ -8,6 +9,7 @@ const routeTemplateNames = loadAgentTemplateNamesFromIntentRouting();
 
 const AGENT_TEMPLATE_REGISTRY: Record<string, ReplyTemplate> = {
   ...routeAgentTemplates,
+  "query-my-stories": queryMyStoriesAgentTemplate,
   "query-my-tasks": queryMyTasksAgentTemplate,
 };
 
