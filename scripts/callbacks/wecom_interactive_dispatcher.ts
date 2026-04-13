@@ -156,6 +156,14 @@ function buildDefaultComment(statusOrAction: string, entityType: "task" | "bug" 
   return `通过企业微信卡片交互执行${entityLabel}${statusOrAction}`;
 }
 
+function buildDefaultReleaseDesc(status: string): string {
+  return `通过企业微信卡片交互更新发布状态为 ${status}`;
+}
+
+function buildDefaultTestCaseReal(result: string): string {
+  return `通过企业微信卡片提交测试结果：${result}`;
+}
+
 function applyTaskDefaults(args: Record<string, string>): Record<string, string> {
   if (args.status === "done") {
     if (!args["consumed-hours"]) {
@@ -244,13 +252,34 @@ function buildInteractiveRouteArgs(
       }
       return args;
     }
+    case "story.status.submit":
+      args.status = pickFirstSelection(selections, "status") || args.status;
+      if (args.status === "close") {
+        args["closed-reason"] = pickFirstSelection(selections, "closed_reason") || args["closed-reason"] || "done";
+      }
+      if (pickFirstSelection(selections, "comment_mode") !== "silent" && !args.comment && args.status) {
+        args.comment = buildDefaultComment(args.status, "story");
+      }
+      return args;
+    case "release.status.submit":
+      args.status = pickFirstSelection(selections, "status") || args.status;
+      if (pickFirstSelection(selections, "desc_mode") !== "silent" && !args.desc && args.status) {
+        args.desc = buildDefaultReleaseDesc(args.status);
+      }
+      return args;
+    case "testtask.case.run.submit":
+      args.result = pickFirstSelection(selections, "result") || args.result || "pass";
+      if (pickFirstSelection(selections, "real_mode") !== "silent" && !args.real && args.result) {
+        args.real = buildDefaultTestCaseReal(args.result);
+      }
+      return args;
     default:
       return args;
   }
 }
 
 function buildOperationTaskId(event: WecomInteractiveEvent, payload: Record<string, string>): string {
-  return event.taskId || payload.task || payload.bug || payload.story || "interactive";
+  return event.taskId || payload.task || payload.bug || payload.story || payload.release || "interactive";
 }
 
 function buildInteractiveReply(message: string, extra: JsonObject = {}): JsonObject {
@@ -283,6 +312,12 @@ function resolveEntityQuery(actionKey: string, payload: Record<string, string>):
   if (actionKey === "story.review.submit" && payload.story) {
     return { entityType: "story", id: payload.story, routeScript: "query-story-detail" };
   }
+  if (actionKey === "story.status.submit" && payload.story) {
+    return { entityType: "story", id: payload.story, routeScript: "query-story-detail" };
+  }
+  if (actionKey === "release.status.submit" && payload.release) {
+    return { entityType: "release", id: payload.release, routeScript: "query-release-detail" };
+  }
   return null;
 }
 
@@ -291,7 +326,7 @@ function extractEntityStatus(entityType: InteractiveEntityType, result: JsonObje
     ? result.detail as JsonObject
     : undefined;
 
-  if (entityType === "task" || entityType === "bug" || entityType === "story") {
+  if (entityType === "task" || entityType === "bug" || entityType === "story" || entityType === "release") {
     return normalizeStatus(detail?.status ?? result.status);
   }
   return undefined;

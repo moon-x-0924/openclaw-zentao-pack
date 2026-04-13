@@ -1,4 +1,4 @@
-export type InteractiveEntityType = "task" | "bug" | "story";
+export type InteractiveEntityType = "task" | "bug" | "story" | "release";
 
 export interface InteractiveEntityState {
   entityType: InteractiveEntityType;
@@ -89,6 +89,20 @@ export function canReviewStoryStatus(status: string | undefined): boolean {
   return normalizeStatus(status) !== "closed";
 }
 
+export function getStoryAllowedTargetStatuses(status: string | undefined): string[] {
+  switch (normalizeStatus(status)) {
+    case "closed":
+      return ["activate"];
+    default:
+      return ["close"];
+  }
+}
+
+export function getReleaseAllowedTargetStatuses(status: string | undefined): string[] {
+  const current = normalizeStatus(status);
+  return ["wait", "normal", "fail", "terminate"].filter((item) => item !== current);
+}
+
 function buildIllegalActionReason(entityType: InteractiveEntityType, action: string, currentStatus: string | undefined): string {
   const labels = entityType === "task" ? taskActionLabels() : bugActionLabels();
   const actionLabel = labels[action] ?? action;
@@ -98,6 +112,7 @@ function buildIllegalActionReason(entityType: InteractiveEntityType, action: str
 
 export function validateInteractiveAction(input: InteractiveValidationInput): InteractiveValidationResult {
   const currentStatus = normalizeStatus(input.currentStatus);
+  const targetStatus = normalizeStatus(input.targetStatus);
 
   switch (input.actionKey) {
     case "task.status.start":
@@ -113,7 +128,7 @@ export function validateInteractiveAction(input: InteractiveValidationInput): In
         ? { allowed: true }
         : { allowed: false, reason: buildIllegalActionReason("task", "block", currentStatus) };
     case "task.status.submit":
-      return getTaskAllowedTargetStatuses(currentStatus).includes(normalizeStatus(input.targetStatus))
+      return getTaskAllowedTargetStatuses(currentStatus).includes(targetStatus)
         ? { allowed: true }
         : { allowed: false, reason: `当前状态为 ${currentStatus || "unknown"}，不允许更新为“${input.targetStatus ?? "unknown"}”。请刷新卡片后重试。` };
     case "bug.status.activate":
@@ -129,13 +144,21 @@ export function validateInteractiveAction(input: InteractiveValidationInput): In
         ? { allowed: true }
         : { allowed: false, reason: buildIllegalActionReason("bug", "close", currentStatus) };
     case "bug.status.submit":
-      return getBugAllowedTargetStatuses(currentStatus).includes(normalizeStatus(input.targetStatus))
+      return getBugAllowedTargetStatuses(currentStatus).includes(targetStatus)
         ? { allowed: true }
         : { allowed: false, reason: `当前状态为 ${currentStatus || "unknown"}，不允许更新为“${input.targetStatus ?? "unknown"}”。请刷新卡片后重试。` };
     case "story.review.submit":
       return canReviewStoryStatus(currentStatus)
         ? { allowed: true }
         : { allowed: false, reason: `当前需求状态为 ${currentStatus || "unknown"}，不允许继续评审。请刷新卡片后重试。` };
+    case "story.status.submit":
+      return getStoryAllowedTargetStatuses(currentStatus).includes(targetStatus)
+        ? { allowed: true }
+        : { allowed: false, reason: `当前需求状态为 ${currentStatus || "unknown"}，不允许更新为“${input.targetStatus ?? "unknown"}”。请刷新卡片后重试。` };
+    case "release.status.submit":
+      return getReleaseAllowedTargetStatuses(currentStatus).includes(targetStatus)
+        ? { allowed: true }
+        : { allowed: false, reason: `当前发布状态为 ${currentStatus || "unknown"}，不允许更新为“${input.targetStatus ?? "unknown"}”。请刷新卡片后重试。` };
     default:
       return { allowed: true };
   }

@@ -7,6 +7,8 @@ import {
   canReviewStoryStatus,
   getBugAllowedActions,
   getBugAllowedTargetStatuses,
+  getReleaseAllowedTargetStatuses,
+  getStoryAllowedTargetStatuses,
   getTaskAllowedActions,
   getTaskAllowedTargetStatuses,
 } from "../../callbacks/wecom_interactive_rules";
@@ -32,6 +34,37 @@ function renderIdTitleLine(
   return `${index + 1}. #${getText(getPathValue(item, idPath), String(index + 1))} ${getText(getPathValue(item, titlePath), "-")}${suffix}`;
 }
 
+function buildContextPayload(context: { result: JsonObject }): Record<string, string> {
+  const payload: Record<string, string> = {};
+  const testtask = getText(getPathValue(context.result, "resolved_from.testtask"), "");
+  const execution = getText(getPathValue(context.result, "resolved_from.execution"), "");
+  const project = getText(getPathValue(context.result, "resolved_from.project"), "");
+  const product = getText(getPathValue(context.result, "resolved_from.product"), "");
+
+  if (testtask) payload.testtask = testtask;
+  if (execution) payload.execution = execution;
+  if (project) payload.project = project;
+  if (product) payload.product = product;
+  return payload;
+}
+
+function buildRouteAction(
+  label: string,
+  actionKey: string,
+  payload: Record<string, string>,
+  style: 1 | 2 | 3 | 4,
+) {
+  if (Object.keys(payload).length === 0) {
+    return null;
+  }
+
+  return {
+    label,
+    key: buildInteractiveActionKey(actionKey, payload),
+    style,
+  };
+}
+
 export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   "assign-bug": createAgentActionTemplate({
     name: "assign-bug",
@@ -45,6 +78,13 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "create-bug": createAgentActionTemplate({
     name: "create-bug",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const bugId = getText(getPathValue(c.result, "bug_id"), "");
+      return [
+        buildRouteAction("查看Bug详情", WECOM_INTERACTIVE_ACTIONS.bugOpenDetail, { bug: bugId }, 1),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "创建 Bug",
     sections: [
       { label: "Bug", formatter: (c) => `${getText(getPathValue(c.result, "title"))} (ID:${getText(getPathValue(c.result, "bug_id"))})` },
@@ -81,6 +121,13 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "create-release": createAgentActionTemplate({
     name: "create-release",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const releaseId = getText(getPathValue(c.result, "release_id"), "");
+      return [
+        buildRouteAction("查看发布详情", WECOM_INTERACTIVE_ACTIONS.releaseOpenDetail, { release: releaseId }, 1),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "创建发布",
     sections: [
       { label: "发布", formatter: (c) => `${getText(getPathValue(c.result, "name"))} (ID:${getText(getPathValue(c.result, "release_id"))})` },
@@ -99,6 +146,13 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "create-task": createAgentActionTemplate({
     name: "create-task",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const taskId = getText(getPathValue(c.result, "task_id"), "");
+      return [
+        buildRouteAction("查看任务详情", WECOM_INTERACTIVE_ACTIONS.taskOpenDetail, { task: taskId }, 1),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "创建任务",
     sections: [
       { label: "任务", formatter: (c) => `${getText(getPathValue(c.result, "name"))} (ID:${getText(getPathValue(c.result, "task_id"))})` },
@@ -117,6 +171,14 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "create-testtask": createAgentActionTemplate({
     name: "create-testtask",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const testtaskId = getText(getPathValue(c.result, "testtask_id"), "");
+      return [
+        buildRouteAction("查看测试单详情", WECOM_INTERACTIVE_ACTIONS.testtaskOpenDetail, { testtask: testtaskId }, 1),
+        buildRouteAction("查看测试单用例", WECOM_INTERACTIVE_ACTIONS.testtaskCasesOpen, { testtask: testtaskId }, 2),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "创建测试单",
     sections: [
       { label: "测试单", formatter: (c) => `${getText(getPathValue(c.result, "name"))} (ID:${getText(getPathValue(c.result, "testtask_id"))})` },
@@ -144,6 +206,17 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-acceptance-overview": createAgentDetailTemplate({
     name: "query-acceptance-overview",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const contextPayload = buildContextPayload(c);
+      const testtaskId = getText(getPathValue(c.result, "resolved_from.testtask"), "");
+
+      return [
+        buildRouteAction("查看关闭准备", WECOM_INTERACTIVE_ACTIONS.closureReadinessOpen, contextPayload, 1),
+        buildRouteAction("查看关闭阻塞项", WECOM_INTERACTIVE_ACTIONS.closureItemsOpen, contextPayload, 2),
+        buildRouteAction("查看测试单", WECOM_INTERACTIVE_ACTIONS.testtaskOpenDetail, { testtask: testtaskId }, 4),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "验收概览",
     sections: [
       { label: "结论", path: "summary" },
@@ -200,6 +273,20 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-closure-items": createAgentDetailTemplate({
     name: "query-closure-items",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const firstTaskId = getText(getPathValue(c.result, "items.open_tasks.0.raw.id"), "");
+      const firstBugId = getText(getPathValue(c.result, "items.unresolved_bugs.0.raw.id"), "");
+      const firstStoryId = getText(getPathValue(c.result, "items.active_stories.0.raw.id"), "");
+      const firstReleaseId = getText(getPathValue(c.result, "items.non_normal_releases.0.raw.id"), "");
+
+      return [
+        buildRouteAction("查看相关任务", WECOM_INTERACTIVE_ACTIONS.taskOpenDetail, { task: firstTaskId }, 1),
+        buildRouteAction("查看相关Bug", WECOM_INTERACTIVE_ACTIONS.bugOpenDetail, { bug: firstBugId }, 2),
+        buildRouteAction("查看相关需求", WECOM_INTERACTIVE_ACTIONS.storyOpenDetail, { story: firstStoryId }, 1),
+        buildRouteAction("查看相关发布", WECOM_INTERACTIVE_ACTIONS.releaseOpenDetail, { release: firstReleaseId }, 4),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "关闭阻塞项",
     sections: [
       { label: "结论", path: "summary" },
@@ -209,6 +296,17 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-closure-readiness": createAgentDetailTemplate({
     name: "query-closure-readiness",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const contextPayload = buildContextPayload(c);
+      const productId = getText(getPathValue(c.result, "resolved_from.product"), "");
+
+      return [
+        buildRouteAction("查看关闭阻塞项", WECOM_INTERACTIVE_ACTIONS.closureItemsOpen, contextPayload, 1),
+        buildRouteAction("查看验收概览", WECOM_INTERACTIVE_ACTIONS.acceptanceOverviewOpen, contextPayload, 2),
+        buildRouteAction("查看发布列表", WECOM_INTERACTIVE_ACTIONS.releaseOpenList, { product: productId }, 4),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "关闭准备度",
     sections: [
       { label: "准备度", path: "summary" },
@@ -219,6 +317,13 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-execution-stories": createAgentListTemplate({
     name: "query-execution-stories",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const firstStoryId = getText(getPathValue(c.result, "items.0.id"), "");
+      return [
+        buildRouteAction("查看首条需求", WECOM_INTERACTIVE_ACTIONS.storyOpenDetail, { story: firstStoryId }, 1),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "执行需求列表",
     itemsPath: "items",
     countPath: "count",
@@ -231,6 +336,13 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-execution-tasks": createAgentListTemplate({
     name: "query-execution-tasks",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const firstTaskId = getText(getPathValue(c.result, "items.0.id"), "");
+      return [
+        buildRouteAction("鏌ョ湅棣栨潯浠诲姟", WECOM_INTERACTIVE_ACTIONS.taskOpenDetail, { task: firstTaskId }, 1),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "执行任务列表",
     itemsPath: "items",
     countPath: "count",
@@ -254,6 +366,15 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-executions": createAgentListTemplate({
     name: "query-executions",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const firstExecutionId = getText(getPathValue(c.result, "items.0.id"), "");
+      return [
+        buildRouteAction("查看执行任务", WECOM_INTERACTIVE_ACTIONS.executionTasksOpen, { execution: firstExecutionId }, 1),
+        buildRouteAction("查看执行需求", WECOM_INTERACTIVE_ACTIONS.executionStoriesOpen, { execution: firstExecutionId }, 2),
+        buildRouteAction("查看执行团队", WECOM_INTERACTIVE_ACTIONS.executionTeamOpen, { execution: firstExecutionId }, 4),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "执行列表",
     itemsPath: "items",
     countPath: "count",
@@ -267,6 +388,17 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-go-live-checklist": createAgentDetailTemplate({
     name: "query-go-live-checklist",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const contextPayload = buildContextPayload(c);
+      const productId = getText(getPathValue(c.result, "resolved_from.product"), "");
+
+      return [
+        buildRouteAction("查看发布列表", WECOM_INTERACTIVE_ACTIONS.releaseOpenList, { product: productId }, 1),
+        buildRouteAction("查看关闭阻塞项", WECOM_INTERACTIVE_ACTIONS.closureItemsOpen, contextPayload, 2),
+        buildRouteAction("查看验收概览", WECOM_INTERACTIVE_ACTIONS.acceptanceOverviewOpen, contextPayload, 4),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "上线检查",
     sections: [
       { label: "结论", path: "summary" },
@@ -324,14 +456,21 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-product-stories": createAgentListTemplate({
     name: "query-product-stories",
-    title: () => "产品需求",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const firstStoryId = getText(getPathValue(c.result, "items.0.id"), "");
+      return [
+        buildRouteAction("??????", WECOM_INTERACTIVE_ACTIONS.storyOpenDetail, { story: firstStoryId }, 1),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
+    title: () => "????",
     itemsPath: "items",
     countPath: "count",
-    emptyText: "当前没有查询到需求。",
+    emptyText: "??????????",
     itemRenderer: (item, index) => renderIdTitleLine(item, index, "id", "title", [
-      { label: "状态", path: "status" },
-      { label: "优先级", path: "pri" },
-      { label: "负责人", path: "assignedTo", hideIfMissing: true },
+      { label: "??", path: "status" },
+      { label: "???", path: "pri" },
+      { label: "???", path: "assignedTo", hideIfMissing: true },
     ]),
   }),
   "query-products": createAgentListTemplate({
@@ -383,6 +522,45 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-release-detail": createAgentDetailTemplate({
     name: "query-release-detail",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const releaseId = getText(getPathValue(c.result, "release"), "");
+      const currentStatus = getText(getPathValue(c.result, "detail.status"), "").toLowerCase();
+      const allowedStatuses = new Set(getReleaseAllowedTargetStatuses(currentStatus));
+      if (!releaseId) {
+        return [];
+      }
+      return [
+        ...(allowedStatuses.has("wait")
+          ? [{
+              label: "设为待发布",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.releaseStatusSubmit, { release: releaseId, status: "wait" }),
+              style: 1 as const,
+            }]
+          : []),
+        ...(allowedStatuses.has("normal")
+          ? [{
+              label: "设为正常发布",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.releaseStatusSubmit, { release: releaseId, status: "normal" }),
+              style: 2 as const,
+            }]
+          : []),
+        ...(allowedStatuses.has("fail")
+          ? [{
+              label: "设为发布失败",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.releaseStatusSubmit, { release: releaseId, status: "fail" }),
+              style: 4 as const,
+            }]
+          : []),
+        ...(allowedStatuses.has("terminate")
+          ? [{
+              label: "设为已终止",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.releaseStatusSubmit, { release: releaseId, status: "terminate" }),
+              style: 4 as const,
+            }]
+          : []),
+      ];
+    },
     title: (c) => getText(getPathValue(c.result, "title"), `发布详情 #${getText(getPathValue(c.result, "release"))}`),
     sections: [
       { label: "基本信息", path: "detail", fields: [{ label: "状态", path: "status" }, { label: "发布日期", path: "date" }, { label: "标记", path: "marker", hideIfMissing: true }] },
@@ -393,6 +571,13 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-releases": createAgentListTemplate({
     name: "query-releases",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const firstReleaseId = getText(getPathValue(c.result, "items.0.id"), "");
+      return [
+        buildRouteAction("鏌ョ湅棣栨潯鍙戝竷", WECOM_INTERACTIVE_ACTIONS.releaseOpenDetail, { release: firstReleaseId }, 1),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "发布列表",
     itemsPath: "items",
     countPath: "count",
@@ -405,6 +590,38 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-story-detail": createAgentDetailTemplate({
     name: "query-story-detail",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const storyId = getText(getPathValue(c.result, "story"), "");
+      const currentStatus = getText(getPathValue(c.result, "detail.status"), "").toLowerCase();
+      const allowedStatuses = new Set(getStoryAllowedTargetStatuses(currentStatus));
+      if (!storyId) {
+        return [];
+      }
+      return [
+        ...(allowedStatuses.has("close")
+          ? [{
+              label: "关闭需求",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.storyStatusSubmit, {
+                story: storyId,
+                status: "close",
+                "closed-reason": "done",
+              }),
+              style: 2 as const,
+            }]
+          : []),
+        ...(allowedStatuses.has("activate")
+          ? [{
+              label: "激活需求",
+              key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.storyStatusSubmit, {
+                story: storyId,
+                status: "activate",
+              }),
+              style: 1 as const,
+            }]
+          : []),
+      ];
+    },
     title: (c) => `需求详情 #${getText(getPathValue(c.result, "story"))}`,
     sections: [
       { label: "基本信息", path: "detail", fields: [{ label: "状态", path: "status" }, { label: "优先级", path: "pri" }, { label: "阶段", path: "stage", hideIfMissing: true }] },
@@ -457,6 +674,19 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-test-exit-readiness": createAgentDetailTemplate({
     name: "query-test-exit-readiness",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const contextPayload = buildContextPayload(c);
+      const testtaskId = getText(getPathValue(c.result, "testtask_detail.id"), "")
+        || getText(getPathValue(c.result, "testtask"), "")
+        || getText(getPathValue(c.result, "resolved_from.testtask"), "");
+
+      return [
+        buildRouteAction("查看测试单", WECOM_INTERACTIVE_ACTIONS.testtaskOpenDetail, { testtask: testtaskId }, 1),
+        buildRouteAction("查看关闭阻塞项", WECOM_INTERACTIVE_ACTIONS.closureItemsOpen, contextPayload, 2),
+        buildRouteAction("查看上线检查", WECOM_INTERACTIVE_ACTIONS.goLiveChecklistOpen, contextPayload, 4),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: () => "测试准出",
     sections: [
       { label: "结论", path: "summary" },
@@ -479,10 +709,21 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-testtask-cases": createAgentListTemplate({
     name: "query-testtask-cases",
+    cardType: "button_interaction",
     title: () => "测试单用例",
     itemsPath: "items",
     countPath: "count",
     emptyText: "当前没有查询到测试单用例。",
+    actions: (c) => {
+      const firstRunId = getText(getPathValue(c.result, "items.0.id"), "");
+      return firstRunId
+        ? [{
+            label: "执行首条例",
+            key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.testtaskCaseRunSubmit, { run: firstRunId }),
+            style: 1 as const,
+          }]
+        : [];
+    },
     itemRenderer: (item, index) => renderIdTitleLine(item, index, "id", "title", [
       { label: "结果", path: "result", hideIfMissing: true },
       { label: "执行人", path: "assignedTo", hideIfMissing: true },
@@ -490,6 +731,19 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-testtask-detail": createAgentDetailTemplate({
     name: "query-testtask-detail",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const testtaskId = getText(getPathValue(c.result, "testtask"), "");
+      const contextPayload = {
+        testtask: testtaskId,
+        ...buildContextPayload(c),
+      };
+
+      return [
+        buildRouteAction("鏌ョ湅鐢ㄤ緥", WECOM_INTERACTIVE_ACTIONS.testtaskCasesOpen, { testtask: testtaskId }, 1),
+        buildRouteAction("鏌ョ湅鍑嗗嚭", WECOM_INTERACTIVE_ACTIONS.testExitReadinessOpen, contextPayload, 2),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
     title: (c) => `测试单详情 #${getText(getPathValue(c.result, "testtask"))}`,
     sections: [
       { label: "基本信息", path: "detail", fields: [{ label: "状态", path: "status" }, { label: "负责人", path: "owner", hideIfMissing: true }, { label: "开始", path: "begin", hideIfMissing: true }, { label: "结束", path: "end", hideIfMissing: true }] },
@@ -499,21 +753,29 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "query-testtasks": createAgentListTemplate({
     name: "query-testtasks",
-    title: () => "测试单列表",
+    cardType: "button_interaction",
+    actions: (c) => {
+      const firstTesttaskId = getText(getPathValue(c.result, "items.0.id"), "");
+      return [
+        buildRouteAction("???????", WECOM_INTERACTIVE_ACTIONS.testtaskOpenDetail, { testtask: firstTesttaskId }, 1),
+        buildRouteAction("??????", WECOM_INTERACTIVE_ACTIONS.testtaskCasesOpen, { testtask: firstTesttaskId }, 2),
+      ].filter((action): action is NonNullable<typeof action> => Boolean(action));
+    },
+    title: () => "?????",
     itemsPath: "items",
     countPath: "count",
-    emptyText: "当前没有查询到测试单。",
+    emptyText: "???????????",
     metrics: (c) => [
-      { keyname: "数量", value: getText(getPathValue(c.result, "count"), "0") },
-      { keyname: "执行", value: getText(getPathValue(c.result, "execution"), "-") },
-      { keyname: "项目", value: getText(getPathValue(c.result, "project"), "-") },
+      { keyname: "??", value: getText(getPathValue(c.result, "count"), "0") },
+      { keyname: "??", value: getText(getPathValue(c.result, "execution"), "-") },
+      { keyname: "??", value: getText(getPathValue(c.result, "project"), "-") },
     ],
-    quoteText: () => "可继续发送“测试单详情 ID”或“测试单用例 ID”查看测试进展。",
+    quoteText: () => "??????????? ID???????? ID????????",
     itemRenderer: (item, index) => renderIdTitleLine(item, index, "id", "name", [
-      { label: "状态", path: "status" },
-      { label: "负责人", path: "owner", hideIfMissing: true },
-      { label: "开始", path: "begin", hideIfMissing: true },
-      { label: "结束", path: "end", hideIfMissing: true },
+      { label: "??", path: "status" },
+      { label: "???", path: "owner", hideIfMissing: true },
+      { label: "??", path: "begin", hideIfMissing: true },
+      { label: "??", path: "end", hideIfMissing: true },
     ]),
   }),
   "review-story": createAgentActionTemplate({
@@ -558,6 +820,39 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "run-testtask-case": createAgentActionTemplate({
     name: "run-testtask-case",
+    cardType: "multiple_interaction",
+    form: (c) => {
+      const runId = getText(getPathValue(c.result, "run"), "");
+      return {
+        fields: [
+          {
+            questionKey: "result",
+            title: "选择执行结果",
+            selectedId: getText(getPathValue(c.result, "result"), "") || "pass",
+            options: [
+              { id: "pass", text: "通过" },
+              { id: "fail", text: "失败" },
+              { id: "blocked", text: "阻塞" },
+              { id: "skip", text: "暂不执行" },
+            ],
+          },
+          {
+            questionKey: "real_mode",
+            title: "实际结果策略",
+            selectedId: "default",
+            options: [
+              { id: "default", text: "使用默认说明" },
+              { id: "silent", text: "不写说明" },
+            ],
+          },
+        ],
+        submit: {
+          text: "提交结果",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.testtaskCaseRunSubmit, { run: runId }),
+        },
+        replaceText: "测试结果已提交",
+      };
+    },
     title: () => "执行测试用例",
     sections: [
       { label: "运行记录", path: "run" },
@@ -610,15 +905,93 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
   }),
   "update-release-status": createAgentActionTemplate({
     name: "update-release-status",
+    cardType: "multiple_interaction",
+    form: (c) => {
+      const releaseId = getText(getPathValue(c.result, "release"), "");
+      const currentStatus = getText(getPathValue(c.result, "status"), "");
+      const allowedStatuses = new Set(getReleaseAllowedTargetStatuses(currentStatus));
+      return {
+        fields: [
+          {
+            questionKey: "status",
+            title: "选择发布状态",
+            selectedId: undefined,
+            options: [
+              ...(allowedStatuses.has("wait") ? [{ id: "wait", text: "待发布" }] : []),
+              ...(allowedStatuses.has("normal") ? [{ id: "normal", text: "正常发布" }] : []),
+              ...(allowedStatuses.has("fail") ? [{ id: "fail", text: "发布失败" }] : []),
+              ...(allowedStatuses.has("terminate") ? [{ id: "terminate", text: "已终止" }] : []),
+            ],
+          },
+          {
+            questionKey: "desc_mode",
+            title: "说明策略",
+            selectedId: "default",
+            options: [
+              { id: "default", text: "使用默认说明" },
+              { id: "silent", text: "不写说明" },
+            ],
+          },
+        ],
+        submit: {
+          text: "提交更新",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.releaseStatusSubmit, { release: releaseId }),
+        },
+        replaceText: "发布状态更新已提交",
+      };
+    },
     title: () => "发布状态更新",
     sections: [
       { label: "发布", path: "release" },
       { label: "状态变更", formatter: (c) => `-> ${getText(getPathValue(c.result, "status"))}` },
-      { label: "备注", formatter: (c) => getText(getPathValue(c.result, "comment")) || getText(getPathValue(c.result, "message")) },
+      { label: "说明", formatter: (c) => getText(getPathValue(c.result, "desc")) || getText(getPathValue(c.result, "message")) },
     ],
   }),
   "update-story-status": createAgentActionTemplate({
     name: "update-story-status",
+    cardType: "multiple_interaction",
+    form: (c) => {
+      const storyId = getText(getPathValue(c.result, "story"), "");
+      const currentStatus = getText(getPathValue(c.result, "status"), "");
+      const allowedStatuses = new Set(getStoryAllowedTargetStatuses(currentStatus));
+      return {
+        fields: [
+          {
+            questionKey: "status",
+            title: "选择需求状态",
+            selectedId: undefined,
+            options: [
+              ...(allowedStatuses.has("close") ? [{ id: "close", text: "已关闭" }] : []),
+              ...(allowedStatuses.has("activate") ? [{ id: "activate", text: "激活" }] : []),
+            ],
+          },
+          {
+            questionKey: "closed_reason",
+            title: "关闭原因",
+            selectedId: "done",
+            options: [
+              { id: "done", text: "已完成" },
+              { id: "cancel", text: "已取消" },
+              { id: "willnotdo", text: "不做" },
+            ],
+          },
+          {
+            questionKey: "comment_mode",
+            title: "备注策略",
+            selectedId: "default",
+            options: [
+              { id: "default", text: "使用默认备注" },
+              { id: "silent", text: "不写备注" },
+            ],
+          },
+        ],
+        submit: {
+          text: "提交更新",
+          key: buildInteractiveActionKey(WECOM_INTERACTIVE_ACTIONS.storyStatusSubmit, { story: storyId }),
+        },
+        replaceText: "需求状态更新已提交",
+      };
+    },
     title: () => "需求状态更新",
     sections: [
       { label: "需求", path: "story" },
