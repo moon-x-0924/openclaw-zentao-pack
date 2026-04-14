@@ -114,7 +114,13 @@ function maybeWrapReplyAsTemplateCard(
   } satisfies JsonObject;
 }
 
-function toCliArgs(args: Record<string, string>): string[] {
+function toCliArgs(route: IntentRoute, args: Record<string, string>): string[] {
+  const allowedKeys = new Set<string>([
+    "userid",
+    ...route.requiredArgs,
+    ...route.requiredArgsAny,
+    ...Object.keys(route.defaultArgs),
+  ]);
   const normalized: Record<string, string> = {};
   const fallbackUserid = typeof args.userid === "string" && args.userid.trim() && args.userid.trim() !== "current_user"
     ? args.userid.trim()
@@ -128,6 +134,9 @@ function toCliArgs(args: Record<string, string>): string[] {
     }
 
     const normalizedKey = key === "user_id" ? "userid" : key;
+    if (!allowedKeys.has(normalizedKey)) {
+      continue;
+    }
     const normalizedValue = value === "current_user"
       ? (normalizedKey === "userid" ? fallbackUserid : "")
       : value;
@@ -186,7 +195,7 @@ function execNpmScript(scriptName: string, scriptArgs: string[]): string {
 
 function runScript(route: IntentRoute, args: Record<string, string>): JsonObject {
   try {
-    const output = execNpmScript(route.script, toCliArgs(args));
+    const output = execNpmScript(route.script, toCliArgs(route, args));
     return parseJsonInput(output, `npm run ${route.script}`) as JsonObject;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
