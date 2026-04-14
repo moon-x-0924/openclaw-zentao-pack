@@ -54,6 +54,7 @@ interface RouteRepairResult {
 }
 
 const EXACT_MISSING_ARG_FALLBACKS: Record<string, string> = {
+  "query-product-modules": "query-products",
   "query-product-stories": "query-my-stories",
 };
 
