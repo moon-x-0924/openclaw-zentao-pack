@@ -53,6 +53,26 @@ interface RouteRepairResult {
   args: Record<string, string>;
 }
 
+const EXACT_MISSING_ARG_FALLBACKS: Record<string, string> = {
+  "query-product-modules": "query-products",
+  "query-executions": "query-projects",
+  "query-execution-stories": "query-executions",
+  "query-execution-tasks": "query-executions",
+  "query-project-team": "query-projects",
+  "query-execution-team": "query-executions",
+  "query-product-stories": "query-my-stories",
+  "query-testcases": "query-products",
+  "query-testtasks": "query-executions",
+  "query-testtask-detail": "query-testtasks",
+  "query-testtask-cases": "query-testtasks",
+  "query-test-exit-readiness": "query-testtasks",
+  "query-go-live-checklist": "query-testtasks",
+  "query-acceptance-overview": "query-testtasks",
+  "query-closure-readiness": "query-testtasks",
+  "query-closure-items": "query-testtasks",
+  "query-releases": "query-products",
+};
+
 function normalizeReplyFormat(value: string | undefined): "text" | "template_card" {
   const normalized = String(value ?? "").trim().toLowerCase();
   if (normalized === "template_card" || normalized === "card") {
@@ -347,13 +367,42 @@ async function dispatchRoute(match: RouteMatch, text: string, userid: string, pa
   };
 }
 
-function shouldFallbackToMyStories(match: RouteMatch, text: string, args: Record<string, string>): boolean {
-  if (match.route.intent !== "query-product-stories" || args.product) {
-    return false;
+function normalizeFallbackTriggerText(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[，。！？,.!?:：；;()\[\]{}]/gu, " ")
+    .replace(/\s+/gu, "")
+    .trim();
+}
+
+function resolveExactMissingArgFallback(input: {
+  match: RouteMatch;
+  text: string;
+  args: Record<string, string>;
+  routes: IntentRoute[];
+  userid: string;
+}): RouteRepairResult | null {
+  const fallbackIntent = EXACT_MISSING_ARG_FALLBACKS[input.match.route.intent];
+  if (!fallbackIntent) {
+    return null;
   }
 
-  const normalized = text.trim().replace(/\s+/gu, "");
-  return normalized === "查需求" || normalized === "看需求" || normalized === "需求列表";
+  const normalizedText = normalizeFallbackTriggerText(input.text);
+  const normalizedTrigger = normalizeFallbackTriggerText(input.match.trigger ?? "");
+  if (!normalizedText || !normalizedTrigger || normalizedText !== normalizedTrigger) {
+    return null;
+  }
+
+  const fallbackRoute = findRouteByIntent(fallbackIntent, input.routes);
+  if (!fallbackRoute) {
+    return null;
+  }
+
+  return {
+    match: { route: fallbackRoute, trigger: `fallback-${fallbackIntent}` },
+    args: extractRouteArgs(input.text, fallbackRoute, input.userid),
+  };
 }
 
 function resolveRouteArgsWithLlmRepair(input: {
@@ -373,14 +422,15 @@ function resolveRouteArgsWithLlmRepair(input: {
   }
 
   if (!input.llmDecision?.is_zentao_request) {
-    if (shouldFallbackToMyStories(input.match, input.text, baseArgs)) {
-      const myStoriesRoute = findRouteByIntent("query-my-stories", input.routes);
-      if (myStoriesRoute) {
-        return {
-          match: { route: myStoriesRoute, trigger: "fallback-my-stories" },
-          args: extractRouteArgs(input.text, myStoriesRoute, input.userid),
-        };
-      }
+    const fallback = resolveExactMissingArgFallback({
+      match: input.match,
+      text: input.text,
+      args: baseArgs,
+      routes: input.routes,
+      userid: input.userid,
+    });
+    if (fallback) {
+      return fallback;
     }
     return null;
   }
@@ -400,14 +450,15 @@ function resolveRouteArgsWithLlmRepair(input: {
   const candidateMissingArgs = collectMissingArgs(candidateRoute, candidateArgs);
 
   if (candidateMissingArgs.length >= baseMissingArgs.length) {
-    if (shouldFallbackToMyStories(input.match, input.text, baseArgs)) {
-      const myStoriesRoute = findRouteByIntent("query-my-stories", input.routes);
-      if (myStoriesRoute) {
-        return {
-          match: { route: myStoriesRoute, trigger: "fallback-my-stories" },
-          args: extractRouteArgs(input.text, myStoriesRoute, input.userid),
-        };
-      }
+    const fallback = resolveExactMissingArgFallback({
+      match: input.match,
+      text: input.text,
+      args: baseArgs,
+      routes: input.routes,
+      userid: input.userid,
+    });
+    if (fallback) {
+      return fallback;
     }
     return null;
   }
