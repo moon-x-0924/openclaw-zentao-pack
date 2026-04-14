@@ -62,6 +62,15 @@ interface NpmRunner {
   displayName: string;
 }
 
+interface RouteRepairResult {
+  match: RouteMatch;
+  args: Record<string, string>;
+}
+
+const EXACT_MISSING_ARG_FALLBACKS: Record<string, string> = {
+  "query-product-stories": "query-my-stories",
+};
+
 function normalizeReplyFormat(value: string | undefined): "text" | "template_card" {
   const normalized = String(value ?? "").trim().toLowerCase();
   if (normalized === "template_card" || normalized === "card") {
@@ -119,7 +128,13 @@ function maybeWrapReplyAsTemplateCard(
   } satisfies JsonObject;
 }
 
-function toCliArgs(args: Record<string, string>): string[] {
+function toCliArgs(route: IntentRoute, args: Record<string, string>): string[] {
+  const allowedKeys = new Set<string>([
+    "userid",
+    ...route.requiredArgs,
+    ...route.requiredArgsAny,
+    ...Object.keys(route.defaultArgs),
+  ]);
   const normalized: Record<string, string> = {};
   const fallbackUserid = typeof args.userid === "string" && args.userid.trim() && args.userid.trim() !== "current_user"
     ? args.userid.trim()
@@ -133,6 +148,9 @@ function toCliArgs(args: Record<string, string>): string[] {
     }
 
     const normalizedKey = key === "user_id" ? "userid" : key;
+    if (!allowedKeys.has(normalizedKey)) {
+      continue;
+    }
     const normalizedValue = value === "current_user"
       ? (normalizedKey === "userid" ? fallbackUserid : "")
       : value;
@@ -191,7 +209,7 @@ function execNpmScript(scriptName: string, scriptArgs: string[]): string {
 
 function runScript(route: IntentRoute, args: Record<string, string>): JsonObject {
   try {
-    const output = execNpmScript(route.script, toCliArgs(args));
+    const output = execNpmScript(route.script, toCliArgs(route, args));
     return parseJsonInput(output, `npm run ${route.script}`) as JsonObject;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -472,6 +490,108 @@ async function dispatchRoute(match: RouteMatch, text: string, userid: string, pa
   };
 }
 
+function normalizeFallbackTriggerText(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[，。！？,.!?:：；;()\[\]{}]/gu, " ")
+    .replace(/\s+/gu, "")
+    .trim();
+}
+
+function resolveExactMissingArgFallback(input: {
+  match: RouteMatch;
+  text: string;
+  args: Record<string, string>;
+  routes: IntentRoute[];
+  userid: string;
+}): RouteRepairResult | null {
+  const fallbackIntent = EXACT_MISSING_ARG_FALLBACKS[input.match.route.intent];
+  if (!fallbackIntent) {
+    return null;
+  }
+
+  const normalizedText = normalizeFallbackTriggerText(input.text);
+  const normalizedTrigger = normalizeFallbackTriggerText(input.match.trigger ?? "");
+  if (!normalizedText || !normalizedTrigger || normalizedText !== normalizedTrigger) {
+    return null;
+  }
+
+  const fallbackRoute = findRouteByIntent(fallbackIntent, input.routes);
+  if (!fallbackRoute) {
+    return null;
+  }
+
+  return {
+    match: { route: fallbackRoute, trigger: `fallback-${fallbackIntent}` },
+    args: extractRouteArgs(input.text, fallbackRoute, input.userid),
+  };
+}
+
+function resolveRouteArgsWithLlmRepair(input: {
+  text: string;
+  userid: string;
+  routes: IntentRoute[];
+  match: RouteMatch;
+  llmDecision: LlmIntentDecision | null;
+}): RouteRepairResult | null {
+  const baseArgs = extractRouteArgs(input.text, input.match.route, input.userid);
+  const baseMissingArgs = collectMissingArgs(input.match.route, baseArgs);
+  if (baseMissingArgs.length === 0) {
+    return {
+      match: input.match,
+      args: baseArgs,
+    };
+  }
+
+  if (!input.llmDecision?.is_zentao_request) {
+    const fallback = resolveExactMissingArgFallback({
+      match: input.match,
+      text: input.text,
+      args: baseArgs,
+      routes: input.routes,
+      userid: input.userid,
+    });
+    if (fallback) {
+      return fallback;
+    }
+    return null;
+  }
+
+  const llmArgs = normalizeRouteArgs(input.llmDecision.args as JsonObject | undefined);
+  const candidateRoute = typeof input.llmDecision.intent === "string" && input.llmDecision.intent.trim()
+    ? findRouteByIntent(input.llmDecision.intent, input.routes) ?? input.match.route
+    : input.match.route;
+  const candidateMatch: RouteMatch = {
+    route: candidateRoute,
+    trigger: input.llmDecision.intent === candidateRoute.intent ? "llm-repair" : input.match.trigger,
+  };
+  const candidateArgs = {
+    ...extractRouteArgs(input.text, candidateRoute, input.userid),
+    ...llmArgs,
+  };
+  const candidateMissingArgs = collectMissingArgs(candidateRoute, candidateArgs);
+
+  if (candidateMissingArgs.length >= baseMissingArgs.length) {
+    const fallback = resolveExactMissingArgFallback({
+      match: input.match,
+      text: input.text,
+      args: baseArgs,
+      routes: input.routes,
+      userid: input.userid,
+    });
+    if (fallback) {
+      return fallback;
+    }
+    return null;
+  }
+
+  return {
+    match: candidateMatch,
+    args: candidateArgs,
+  };
+}
+
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
@@ -544,18 +664,48 @@ async function main(): Promise<void> {
   }
 
   const valuesRecord = values as Record<string, string | boolean | undefined>;
+  let llmDecision: LlmIntentDecision | null = null;
   const match = findRouteMatch(text, routes);
   if (match) {
-    const result = await dispatchRoute(match, text, userid, payload, valuesRecord);
+    const repaired = resolveRouteArgsWithLlmRepair({
+      text,
+      userid,
+      routes,
+      match,
+      llmDecision: null,
+    });
+    let effectiveMatch = match;
+    let effectiveArgs = repaired?.args ?? extractRouteArgs(text, match.route, userid);
+    if (collectMissingArgs(match.route, effectiveArgs).length > 0) {
+      llmDecision = await classifyWecomIntentWithLlm({
+        text,
+        userid,
+        routes,
+      });
+      const llmRepaired = resolveRouteArgsWithLlmRepair({
+        text,
+        userid,
+        routes,
+        match,
+        llmDecision,
+      });
+      if (llmRepaired) {
+        effectiveMatch = llmRepaired.match;
+        effectiveArgs = llmRepaired.args;
+      }
+    }
+
+    const result = await dispatchRoute(effectiveMatch, text, userid, payload, valuesRecord, effectiveArgs);
     printJson(maybeWrapReplyAsTemplateCard({
       ...result,
       message_source: sourceType,
-      route_source: "yaml",
+      route_source: llmDecision ? "yaml_llm_repair" : "yaml",
+      llm_decision: llmDecision ?? undefined,
     }, replyFormat, userid));
     return;
   }
 
-  const llmDecision = await classifyWecomIntentWithLlm({
+  llmDecision = await classifyWecomIntentWithLlm({
     text,
     userid,
     routes,

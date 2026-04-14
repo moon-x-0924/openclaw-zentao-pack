@@ -22,6 +22,7 @@ import { queryExecutionTeamTemplate } from "./templates/query-execution-team";
 import { queryExecutionsTemplate } from "./templates/query-executions";
 import { queryGoLiveChecklistTemplate } from "./templates/query-go-live-checklist";
 import { queryMyBugsTemplate } from "./templates/query-my-bugs";
+import { queryMyStoriesTemplate } from "./templates/query-my-stories";
 import { queryMyTasksTemplate } from "./templates/query-my-tasks";
 import { queryProductModulesTemplate } from "./templates/query-product-modules";
 import { queryProductStoriesTemplate } from "./templates/query-product-stories";
@@ -67,6 +68,7 @@ const TEMPLATE_REGISTRY: Record<string, ReplyTemplate> = {
   "query-executions": queryExecutionsTemplate,
   "query-go-live-checklist": queryGoLiveChecklistTemplate,
   "query-my-bugs": queryMyBugsTemplate,
+  "query-my-stories": queryMyStoriesTemplate,
   "query-my-tasks": queryMyTasksTemplate,
   "query-product-modules": queryProductModulesTemplate,
   "query-product-stories": queryProductStoriesTemplate,
