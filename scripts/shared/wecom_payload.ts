@@ -11,7 +11,9 @@ export interface WecomMessagePayload extends JsonObject {
   msgtype?: string;
   MsgType?: string;
   media_id?: string;
+  MediaId?: string;
   fileName?: string;
+  FileName?: string;
   filename?: string;
   body?: JsonValue;
   sender?: JsonValue;
@@ -186,10 +188,10 @@ export function extractAttachmentInfo(payload: WecomMessagePayload): WecomAttach
   const file = toObject(body?.file) ?? toObject(sender?.file);
 
   const mediaId = (
-    getNestedString(payload, ["media_id"]) ??
-    getNestedString(body, ["media_id", "mediaId"]) ??
-    getNestedString(file, ["media_id", "mediaId"]) ??
-    getNestedString(sender, ["media_id", "mediaId"])
+    getNestedString(payload, ["MediaId", "media_id", "mediaId"]) ??
+    getNestedString(body, ["MediaId", "media_id", "mediaId"]) ??
+    getNestedString(file, ["MediaId", "media_id", "mediaId"]) ??
+    getNestedString(sender, ["MediaId", "media_id", "mediaId"])
   );
 
   if (!mediaId) {
@@ -199,10 +201,10 @@ export function extractAttachmentInfo(payload: WecomMessagePayload): WecomAttach
   return {
     mediaId,
     filename: (
-      getNestedString(payload, ["fileName", "filename"]) ??
-      getNestedString(body, ["fileName", "filename"]) ??
-      getNestedString(file, ["file_name", "fileName", "filename", "name"]) ??
-      getNestedString(sender, ["fileName", "filename"])
+      getNestedString(payload, ["FileName", "fileName", "filename"]) ??
+      getNestedString(body, ["FileName", "fileName", "filename"]) ??
+      getNestedString(file, ["file_name", "FileName", "fileName", "filename", "name"]) ??
+      getNestedString(sender, ["FileName", "fileName", "filename"])
     ),
     msgType: (
       getNestedString(payload, ["msgtype", "MsgType"]) ??
