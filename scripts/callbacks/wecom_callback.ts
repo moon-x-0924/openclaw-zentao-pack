@@ -19,6 +19,8 @@ import { buildMissingArgsReply, buildRouteHelpText, buildScriptErrorReply, build
 import { collectMissingArgs, extractRouteArgs, findRouteByIntent, findRouteMatch, loadIntentRoutes, normalizeRouteArgs, type IntentRoute, type RouteMatch } from "./wecom_route_resolver";
 import { WecomClient } from "../shared/wecom_client";
 import { dispatchInteractiveCallback } from "./wecom_interactive_dispatcher";
+import { appendRecentWecomMessage, listRecentWecomMessages, type WecomRecentMessageRecord } from "../shared/wecom_recent_message_window";
+import { clearPendingWecomOperation, loadPendingWecomOperation, savePendingWecomOperation } from "../shared/wecom_pending_operation_store";
 
 interface CallbackPayload extends JsonObject {
   content?: string;
@@ -26,7 +28,18 @@ interface CallbackPayload extends JsonObject {
   msgtype?: string;
   MsgType?: string;
   reply_format?: string;
+  route_args?: JsonValue;
   body?: JsonValue;
+}
+
+interface ResolvedAttachmentInfo {
+  mediaId: string;
+  filename?: string;
+}
+
+interface AttachmentIntentCandidate {
+  intent: "requirement-to-testcase" | "import-tasks-from-excel";
+  attachments: ResolvedAttachmentInfo[];
 }
 
 const PACKAGE_ROOT = path.resolve(__dirname, "../../..");
@@ -293,6 +306,227 @@ function isImportTaskRequest(text: string, payload: WecomMessagePayload): boolea
   return extractAttachmentInfo(payload) !== null;
 }
 
+function isRequirementIntentText(text: string): boolean {
+  return REQUIREMENT_TO_TESTCASE_TRIGGERS.some((trigger) => text.includes(trigger));
+}
+
+function isImportIntentText(text: string): boolean {
+  return IMPORT_TASK_TRIGGERS.some((trigger) => text.includes(trigger));
+}
+
+function isExcelLikeAttachment(filename: string | undefined): boolean {
+  const normalized = String(filename ?? "").trim().toLowerCase();
+  return normalized.endsWith(".xlsx") || normalized.endsWith(".xls") || normalized.endsWith(".csv");
+}
+
+function getRouteAttachment(payload: WecomMessagePayload): ResolvedAttachmentInfo | null {
+  const routeArgs = payload.route_args && typeof payload.route_args === "object" && !Array.isArray(payload.route_args)
+    ? payload.route_args as Record<string, unknown>
+    : undefined;
+  if (!routeArgs || typeof routeArgs.mediaId !== "string" || !routeArgs.mediaId.trim()) {
+    return null;
+  }
+  return {
+    mediaId: routeArgs.mediaId.trim(),
+    filename: typeof routeArgs.filename === "string" ? routeArgs.filename.trim() : undefined,
+  };
+}
+
+function buildAttachmentAwarePayload(payload: WecomMessagePayload, attachment: ResolvedAttachmentInfo): CallbackPayload {
+  return {
+    ...payload,
+    route_args: {
+      ...(payload.route_args && typeof payload.route_args === "object" && !Array.isArray(payload.route_args)
+        ? payload.route_args as Record<string, unknown>
+        : {}),
+      mediaId: attachment.mediaId,
+      filename: attachment.filename,
+    },
+  } satisfies CallbackPayload;
+}
+
+function collectCandidateAttachments(records: WecomRecentMessageRecord[], intent: AttachmentIntentCandidate["intent"]): ResolvedAttachmentInfo[] {
+  const filtered = records
+    .filter((record) => record.type === "file" && record.attachment?.mediaId)
+    .map((record) => record.attachment as ResolvedAttachmentInfo)
+    .filter((attachment) => intent === "requirement-to-testcase"
+      ? String(attachment.filename ?? "").trim().toLowerCase().endsWith(".docx")
+      : isExcelLikeAttachment(attachment.filename));
+
+  const seen = new Set<string>();
+  return filtered.filter((attachment) => {
+    if (seen.has(attachment.mediaId)) {
+      return false;
+    }
+    seen.add(attachment.mediaId);
+    return true;
+  });
+}
+
+function resolveAttachmentIntentCandidate(userid: string, text: string): AttachmentIntentCandidate | null {
+  const trimmedText = text.trim();
+  if (!trimmedText) {
+    return null;
+  }
+
+  const recentMessages = listRecentWecomMessages(userid);
+  if (recentMessages.length === 0) {
+    return null;
+  }
+
+  if (isRequirementIntentText(trimmedText)) {
+    const attachments = collectCandidateAttachments(recentMessages, "requirement-to-testcase");
+    return attachments.length > 0 ? { intent: "requirement-to-testcase", attachments } : null;
+  }
+
+  if (isImportIntentText(trimmedText)) {
+    const attachments = collectCandidateAttachments(recentMessages, "import-tasks-from-excel");
+    return attachments.length > 0 ? { intent: "import-tasks-from-excel", attachments } : null;
+  }
+
+  return null;
+}
+
+function buildPendingConfirmationReply(operationText: string, attachment: ResolvedAttachmentInfo): string {
+  return [
+    "已收到附件：",
+    `1. ${attachment.filename ?? attachment.mediaId}`,
+    "",
+    `你刚才的指令是：${operationText}`,
+    "请回复以下任一内容继续：",
+    "- 确认",
+    "- 取消",
+    "- 改为生成xmind",
+  ].join("\n");
+}
+
+function buildPendingSelectionReply(operationText: string, attachments: ResolvedAttachmentInfo[]): string {
+  return [
+    "已收到多个附件，请确认要处理哪个文件：",
+    ...attachments.map((attachment, index) => `${index + 1}. ${attachment.filename ?? attachment.mediaId}`),
+    "",
+    `你刚才的指令是：${operationText}`,
+    "请回复：",
+    ...attachments.map((_, index) => `- 处理第${index + 1}个`),
+    "- 取消",
+  ].join("\n");
+}
+
+function buildPendingExpiredReply(): JsonObject {
+  return {
+    ok: true,
+    reply_text: "上一条待确认的附件操作已过期，请重新发送附件和处理指令。",
+  } satisfies JsonObject;
+}
+
+function parsePendingSelection(text: string, maxCount: number): number | null {
+  const normalized = text.trim();
+  const match = normalized.match(/第\s*(\d+)\s*个/u) ?? normalized.match(/处理\s*(\d+)/u);
+  if (!match?.[1]) {
+    return null;
+  }
+  const index = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(index) || index < 1 || index > maxCount) {
+    return null;
+  }
+  return index - 1;
+}
+
+function isConfirmReply(text: string): boolean {
+  const normalized = text.trim();
+  return ["确认", "好的", "开始", "继续"].includes(normalized);
+}
+
+function isCancelReply(text: string): boolean {
+  const normalized = text.trim();
+  return ["取消", "不用了", "结束"].includes(normalized);
+}
+
+async function resolvePendingOperationReply(text: string, userid: string, payload: CallbackPayload): Promise<JsonObject | null> {
+  const pending = loadPendingWecomOperation(userid);
+  if (!pending) {
+    return null;
+  }
+
+  const trimmedText = text.trim();
+  if (!trimmedText) {
+    clearPendingWecomOperation(userid);
+    return buildPendingExpiredReply();
+  }
+
+  if (isCancelReply(trimmedText)) {
+    clearPendingWecomOperation(userid);
+    return {
+      ok: true,
+      userid,
+      intent: pending.intent,
+      reply_text: "已取消本次附件处理请求。",
+    } satisfies JsonObject;
+  }
+
+  if (pending.status === "awaiting_confirmation") {
+    if (!isConfirmReply(trimmedText) && !trimmedText.includes("xmind")) {
+      return {
+        ok: true,
+        userid,
+        intent: pending.intent,
+        reply_text: buildPendingConfirmationReply(pending.originalText, pending.attachments[0]),
+      } satisfies JsonObject;
+    }
+
+    clearPendingWecomOperation(userid);
+    const attachment = pending.attachments[0];
+    const effectiveText = trimmedText.includes("xmind") ? trimmedText : pending.originalText;
+    const nextPayload = buildAttachmentAwarePayload(payload, attachment);
+    return pending.intent === "requirement-to-testcase"
+      ? dispatchRequirementToTestcase(effectiveText, userid, nextPayload)
+      : dispatchImportTask(effectiveText, userid, nextPayload);
+  }
+
+  const selectedIndex = parsePendingSelection(trimmedText, pending.attachments.length);
+  if (selectedIndex === null) {
+    return {
+      ok: true,
+      userid,
+      intent: pending.intent,
+      reply_text: buildPendingSelectionReply(pending.originalText, pending.attachments),
+    } satisfies JsonObject;
+  }
+
+  clearPendingWecomOperation(userid);
+  const attachment = pending.attachments[selectedIndex];
+  const nextPayload = buildAttachmentAwarePayload(payload, attachment);
+  return pending.intent === "requirement-to-testcase"
+    ? dispatchRequirementToTestcase(pending.originalText, userid, nextPayload)
+    : dispatchImportTask(pending.originalText, userid, nextPayload);
+}
+
+function buildAttachmentIntentReply(userid: string, text: string): JsonObject | null {
+  const candidate = resolveAttachmentIntentCandidate(userid, text);
+  if (!candidate) {
+    return null;
+  }
+
+  const status = candidate.attachments.length === 1 ? "awaiting_confirmation" : "awaiting_selection";
+  savePendingWecomOperation({
+    userid,
+    intent: candidate.intent,
+    originalText: text.trim(),
+    attachments: candidate.attachments,
+    status,
+  });
+
+  return {
+    ok: true,
+    userid,
+    intent: candidate.intent,
+    pending_operation: status,
+    reply_text: candidate.attachments.length === 1
+      ? buildPendingConfirmationReply(text.trim(), candidate.attachments[0])
+      : buildPendingSelectionReply(text.trim(), candidate.attachments),
+  } satisfies JsonObject;
+}
+
 function extractImportTaskCommand(text: string): ImportTaskCommand {
   const command: ImportTaskCommand = {};
   command.sourceUrl = extractSourceUrl(text);
@@ -312,7 +546,7 @@ function extractImportTaskCommand(text: string): ImportTaskCommand {
 
 async function dispatchImportTask(text: string, userid: string, payload: WecomMessagePayload): Promise<JsonObject> {
   const command = extractImportTaskCommand(text);
-  const attachment = extractAttachmentInfo(payload);
+  const attachment = extractAttachmentInfo(payload) ?? getRouteAttachment(payload);
   const missingArgs: string[] = [];
   if (!command.sourceUrl && !attachment) {
     missingArgs.push("Excel/CSV 地址或企微附件");
@@ -394,7 +628,7 @@ async function dispatchImportTask(text: string, userid: string, payload: WecomMe
 
 async function dispatchRequirementToTestcase(text: string, userid: string, payload: WecomMessagePayload): Promise<JsonObject> {
   const command = extractRequirementToTestcaseCommand(text);
-  const attachment = extractAttachmentInfo(payload);
+  const attachment = extractAttachmentInfo(payload) ?? getRouteAttachment(payload);
   const trimmedText = text.trim();
 
   if (!attachment && !trimmedText) {
@@ -702,6 +936,42 @@ async function main(): Promise<void> {
   const interactiveResult = await dispatchInteractiveCallback(payload, userid);
   if (interactiveResult) {
     printJson(maybeWrapReplyAsTemplateCard(interactiveResult, replyFormat, userid));
+    return;
+  }
+
+  const inboundAttachment = extractAttachmentInfo(payload);
+  if (inboundAttachment) {
+    appendRecentWecomMessage({
+      userid,
+      type: "file",
+      attachment: inboundAttachment,
+    });
+  }
+  if (text.trim()) {
+    appendRecentWecomMessage({
+      userid,
+      type: "text",
+      text: text.trim(),
+    });
+  }
+
+  const pendingReply = await resolvePendingOperationReply(text, userid, payload);
+  if (pendingReply) {
+    printJson(maybeWrapReplyAsTemplateCard({
+      ...pendingReply,
+      message_source: sourceType,
+      route_source: "wecom_attachment_pending",
+    }, replyFormat, userid));
+    return;
+  }
+
+  const attachmentIntentReply = buildAttachmentIntentReply(userid, text);
+  if (attachmentIntentReply) {
+    printJson(maybeWrapReplyAsTemplateCard({
+      ...attachmentIntentReply,
+      message_source: sourceType,
+      route_source: "wecom_attachment_window",
+    }, replyFormat, userid));
     return;
   }
 
