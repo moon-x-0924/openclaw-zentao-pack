@@ -46,6 +46,15 @@ const REQUIREMENT_TO_TESTCASE_TRIGGERS = [
   "测试案例",
 ];
 
+const SHORT_REQUIREMENT_COMMAND_HINTS = [
+  "生成测试用例",
+  "分析此需求文档生成测试用例",
+  "根据文档生成测试用例",
+  "导出测试用例",
+  "需求转测试用例",
+  "测试案例",
+];
+
 interface ImportTaskCommand {
   sourceUrl?: string;
   execution?: string;
@@ -249,6 +258,33 @@ function extractRequirementToTestcaseCommand(text: string): RequirementToTestcas
   };
 }
 
+function isShortRequirementCommandWithoutDocument(text: string): boolean {
+  const normalized = text
+    .trim()
+    .toLowerCase()
+    .replace(/[，。！？,.!?:：；;（）()【】\[\]{}<>《》"'“”‘’]/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
+
+  if (!normalized) {
+    return false;
+  }
+
+  if (normalized.length > 30) {
+    return false;
+  }
+
+  return SHORT_REQUIREMENT_COMMAND_HINTS.some((hint) => {
+    const normalizedHint = hint
+      .trim()
+      .toLowerCase()
+      .replace(/[，。！？,.!?:：；;（）()【】\[\]{}<>《》"'“”‘’]/gu, " ")
+      .replace(/\s+/gu, " ")
+      .trim();
+    return normalized === normalizedHint;
+  });
+}
+
 function isImportTaskRequest(text: string, payload: WecomMessagePayload): boolean {
   if (IMPORT_TASK_TRIGGERS.some((trigger) => text.includes(trigger))) {
     return true;
@@ -359,8 +395,9 @@ async function dispatchImportTask(text: string, userid: string, payload: WecomMe
 async function dispatchRequirementToTestcase(text: string, userid: string, payload: WecomMessagePayload): Promise<JsonObject> {
   const command = extractRequirementToTestcaseCommand(text);
   const attachment = extractAttachmentInfo(payload);
+  const trimmedText = text.trim();
 
-  if (!attachment && !text.trim()) {
+  if (!attachment && !trimmedText) {
     return {
       ok: true,
       userid,
@@ -370,6 +407,20 @@ async function dispatchRequirementToTestcase(text: string, userid: string, paylo
         "已识别为需求转测试用例请求。",
         "请发送 .docx 需求文档，或直接粘贴需求文本后重试。",
         "示例：上传 .docx 后发送“生成测试用例并导出excel”",
+      ].join("\n"),
+    };
+  }
+
+  if (!attachment && isShortRequirementCommandWithoutDocument(trimmedText)) {
+    return {
+      ok: true,
+      userid,
+      intent: "requirement-to-testcase",
+      missing_args: [".docx 附件或需求正文"],
+      reply_text: [
+        "已识别为需求转测试用例请求，但当前未检测到可读取的 .docx 附件内容。",
+        "请重新上传需求文档后重试，或直接粘贴需求正文。",
+        "仅发送“生成测试用例”这类短指令时，系统不会再把指令本身当成需求正文处理。",
       ].join("\n"),
     };
   }
@@ -408,10 +459,10 @@ async function dispatchRequirementToTestcase(text: string, userid: string, paylo
       if (tempStats.size === 0) {
         throw new Error(`临时文件为空：${tempFilePath}`);
       }
-      
+
       cliArgs.push("--input-file", tempFilePath);
     } else {
-      cliArgs.push("--input-text", text.trim());
+      cliArgs.push("--input-text", trimmedText);
     }
 
     const output = execNpmScript("requirement-to-testcase", cliArgs);
