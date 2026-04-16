@@ -64,6 +64,11 @@ normalize_commit() {
   printf '%s\n' "$value"
 }
 
+is_git_ignored() {
+  local path="$1"
+  git check-ignore -q --no-index -- "$path"
+}
+
 main() {
   should_enable_hook || exit 0
   [[ -n "${EVENT//[[:space:]]/}" ]] || exit 0
@@ -92,6 +97,10 @@ main() {
   fi
 
   if [[ "$record_status" -ne 0 ]]; then
+    exit 0
+  fi
+
+  if is_git_ignored "$log_path"; then
     exit 0
   fi
 

@@ -4,6 +4,11 @@ set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 [[ -n "${ROOT//[[:space:]]/}" ]] || exit 0
 
+is_git_ignored() {
+  local path="$1"
+  git check-ignore -q --no-index -- "$path"
+}
+
 should_enable_hook() {
   [[ "${OPENCLAW_GIT_COMMIT_HOOK_DISABLE:-0}" == "1" ]] && return 1
   [[ "${OPENCLAW_GIT_COMMIT_HOOK_FORCE:-0}" == "1" ]] && return 0
@@ -41,6 +46,10 @@ main() {
   fi
 
   if [[ "$record_status" -ne 0 ]]; then
+    exit 0
+  fi
+
+  if is_git_ignored "$log_path"; then
     exit 0
   fi
 
