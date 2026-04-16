@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-export const DEFAULT_SOP_LOG_RELATIVE_PATH = "docs/ops/测试问题SOP清单.md";
+export const DEFAULT_SOP_LOG_RELATIVE_PATH = "docs/ops/sop问题记录/测试问题SOP清单.md";
 const SHANGHAI_TIME_ZONE = "Asia/Shanghai";
 const RECORD_MARKER = "## 问题记录";
 
@@ -20,8 +20,15 @@ export interface SopTestIssueEntryInput {
   stdout?: string;
   stderr?: string;
   note?: string;
+  screenshots?: string[];
+  imageNotes?: string[];
   exitCode?: number | null;
   signal?: NodeJS.Signals | null;
+}
+
+interface ScreenshotLink {
+  label: string;
+  markdownPath: string;
 }
 
 function findRepoRoot(startDir: string): string {
@@ -89,10 +96,85 @@ function formatCodeFence(text: string): string {
   return text.replace(/```/g, "'''");
 }
 
+function normalizeMarkdownPath(filePath: string): string {
+  return filePath.replace(/\\/g, "/");
+}
+
+function normalizeEvidenceNotes(notes: string[] | undefined): string[] {
+  return (notes ?? [])
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseScreenshotItem(raw: string, index: number): { label: string; filePath: string } {
+  const normalized = raw.trim();
+  if (!normalized) {
+    return {
+      label: `截图${index + 1}`,
+      filePath: normalized,
+    };
+  }
+
+  const separator = normalized.includes("::") ? "::" : normalized.includes("=>") ? "=>" : null;
+  if (!separator) {
+    return {
+      label: `截图${index + 1}`,
+      filePath: normalized,
+    };
+  }
+
+  const [labelPart, ...rest] = normalized.split(separator);
+  const filePath = rest.join(separator).trim();
+  const label = labelPart.trim() || `截图${index + 1}`;
+
+  return {
+    label,
+    filePath: filePath || normalized,
+  };
+}
+
+function resolveScreenshotLinks(
+  screenshots: string[] | undefined,
+  logFile: string,
+  baseDir: string,
+): ScreenshotLink[] {
+  return (screenshots ?? [])
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item, index) => {
+      const parsed = parseScreenshotItem(item, index);
+      const absolutePath = path.isAbsolute(parsed.filePath) ? parsed.filePath : path.resolve(baseDir, parsed.filePath);
+      const relativePath = path.relative(path.dirname(logFile), absolutePath);
+      const normalizedPath = normalizeMarkdownPath(relativePath || path.basename(absolutePath));
+      const markdownPath = normalizedPath.startsWith(".") || normalizedPath.startsWith("..")
+        ? normalizedPath
+        : `./${normalizedPath}`;
+
+      return {
+        label: parsed.label,
+        markdownPath,
+      };
+    });
+}
+
+function buildImageNoteLabel(index: number, screenshotLinks: ScreenshotLink[]): string {
+  const screenshotLabel = screenshotLinks[index]?.label?.trim();
+  if (!screenshotLabel || screenshotLabel === `截图${index + 1}`) {
+    return `图${index + 1}`;
+  }
+  return `图${index + 1}（${screenshotLabel}）`;
+}
+
 function buildInitialDocument(): string {
   return `# 测试问题 SOP 清单
 
 这个文件用于在本地记录测试、联调、回归过程中发现的问题，便于后续追踪、复盘和回填禅道。
+
+相关目录：
+
+- \`docs/ops/sop问题记录/测试问题SOP清单.md\`
+- \`docs/ops/sop问题记录/SOP问题记录提示词.md\`
+- \`docs/ops/sop问题记录/screenshots/\`
 
 ## 使用规则
 
@@ -100,92 +182,31 @@ function buildInitialDocument(): string {
 - 命令执行失败时，可以使用自动记录命令，让失败信息直接追加到本文件。
 - 命令执行成功但结果不符合预期，或问题发生在真实使用场景中时，使用手工记录命令补记。
 - 每条问题至少补齐：现象、期望、实际、初步判断、下一步动作。
+- 需要保留现场证据时，可以附截图；建议把截图放到 \`docs/ops/sop问题记录/screenshots/\` 下再记录，并为每张图补一句“这张图是什么”。
+- 如果只有聊天里上传的图片、没有本地路径，也要把看图后的“图片说明”写入问题记录。
 - 新问题默认追加在“问题记录”顶部，方便先看最新问题。
 
 ## 推荐命令
 
+- 截图先归档到标准目录：\`npm run archive-sop-screenshot -- --source ~/Desktop/wecom-module.png --name wecom-module-general-ai\`
 - 现场问题直接记录：\`npm run log-test-issue -- --title "企微消息未生成卡片记录" --expected "发送企微消息后自动生成卡片记录" --actual "消息已发送，但系统没有生成卡片记录" --analysis "可能是企微回调未命中卡片落盘链路" --next-action "检查企微回调日志、卡片生成逻辑和落盘条件" --tags "企微,卡片,现场问题"\`
+- 带截图记录：\`npm run log-observed-issue -- --title "企微消息未生成卡片记录" --expected "发送企微消息后自动生成卡片记录" --actual "消息已发送，但系统没有生成卡片记录" --analysis "可能是企微回调未命中卡片落盘链路" --next-action "检查企微回调日志、卡片生成逻辑和落盘条件" --screenshots "企微聊天窗口未出现卡片::docs/ops/sop问题记录/screenshots/wecom-card-missing.png,调试台显示走了general_ai::docs/ops/sop问题记录/screenshots/wecom-router-debug.png"\`
+- 只有图片说明也可记录：\`npm run log-observed-issue -- --title "企微消息未生成卡片记录" --expected "发送企微消息后自动生成卡片记录" --actual "消息已发送，但系统没有生成卡片记录" --analysis "可能是企微回调未命中卡片落盘链路" --next-action "检查企微回调日志、卡片生成逻辑和落盘条件" --image-notes "图1显示企微会话里返回普通文本，没有卡片|图2显示调试链路命中 general_ai"\`
 - 自动记录：\`npm run test-with-sop-log -- --title "联调企微回调失败" --cmd "npm run wecom-callback -- --data-file examples/callbacks/tmp-callback-task.json"\`
 - 手工记录：\`npm run log-test-issue -- --title "测试单状态未更新" --actual "接口返回成功但页面仍显示进行中" --command "npm run update-testtask-status -- --testtask 1 --status done"\`
 
-## 给 AI 的提示词
+## 提示词与截图使用
 
-\`\`\`text
-你现在是这个仓库的测试协作助手。每次执行测试、联调、回归时，必须遵循以下规则：
-1. 如果用户已经明确描述了现场问题，先把问题追加到 docs/ops/测试问题SOP清单.md，不要默认自行执行命令复现；只有用户明确要求联调、复现、排查时才执行命令。
-2. 只要出现命令失败、接口报错、页面行为不符、数据未落库、返回值异常，或者用户反馈“真实操作中出了问题”，都要记录到 docs/ops/测试问题SOP清单.md。
-3. 用户口述或人工观察到的问题，优先执行：
-   npm run log-test-issue -- --title "<一句话标题>" --expected "<期望结果>" --actual "<实际结果>" --analysis "<初步判断>" --next-action "<下一步动作>"
-4. 如果命令退出码非 0，优先执行：
-   npm run test-with-sop-log -- --title "<一句话标题>" --cmd "<实际执行的测试命令>" --expected "<期望结果>" --next-action "<下一步动作>"
-5. 如果命令执行成功但结果仍有问题，执行：
-   npm run log-test-issue -- --title "<一句话标题>" --command "<实际执行的命令>" --expected "<期望结果>" --actual "<实际结果>" --analysis "<初步判断>" --next-action "<下一步动作>"
-6. 回复用户时，先说明问题结论，再明确告诉用户该问题已经写入 docs/ops/测试问题SOP清单.md。
-7. 除非用户明确要求跳过，否则不要省略问题记录步骤。
-\`\`\`
-
-## 常用归档提示词
-
-### 1. 已经分析完，先记录，不继续修复
-
-\`\`\`text
-基于你刚才已经给出的原因分析，现在先不要继续修复，也不要继续执行复现、联调或排查命令。
-
-请把“本次问题”先整理并记录到 \`docs/ops/测试问题SOP清单.md\`，方便我后续逐项处理。
-
-要求：
-1. 直接基于你刚才已经输出的结论整理，不要重复排查。
-2. 记录内容至少包括：
-   - title：一句话问题标题
-   - expected：期望结果
-   - actual：实际结果
-   - analysis：你刚才判断的原因总结
-   - next-action：后续修复或排查建议
-3. 不要编造新的日志、截图、执行结果。
-4. 不要继续修复，只做记录。
-5. 直接执行：
-   npm run log-observed-issue -- --title "<title>" --expected "<expected>" --actual "<actual>" --analysis "<analysis>" --next-action "<next-action>" --tags "待修复,问题归档,现场问题"
-6. 完成后只回复我：
-   - 本次问题摘要
-   - 已写入 docs/ops/测试问题SOP清单.md
-   - 建议后续修复优先级
-\`\`\`
-
-### 2. 已知现场现象，先记录，不先复现
-
-\`\`\`text
-你现在先不要执行任何复现命令，也不要主动联调。
-
-请基于我刚才描述的问题，先整理出一条“问题记录”，并立即写入 \`docs/ops/测试问题SOP清单.md\`。
-
-要求：
-1. 先把这次问题整理成这几个字段：
-   - title：一句话问题标题
-   - expected：期望结果
-   - actual：实际结果
-   - analysis：你判断的可能原因
-   - next-action：建议下一步排查动作
-2. 如果我提供的信息不完整，你可以做最小必要假设，但要写得保守，不要编造执行结果。
-3. 不要先复现，不要先跑命令。
-4. 直接执行记录命令，把问题写入 SOP：
-   npm run log-observed-issue -- --title "<title>" --expected "<expected>" --actual "<actual>" --analysis "<analysis>" --next-action "<next-action>" --tags "现场问题,待排查"
-5. 回复我时只需要告诉我：
-   - 你整理后的问题摘要
-   - 你已经写入 docs/ops/测试问题SOP清单.md
-   - 建议我下一步是否需要你继续排查
-\`\`\`
-
-### 3. 超短口语版
-
-\`\`\`text
-把你刚才已经分析出的结论先归档，不要继续修复，不要继续跑命令。请直接整理为问题记录，并写入 docs/ops/测试问题SOP清单.md。使用 npm run log-observed-issue 完成记录，回复我摘要、记录位置和建议优先级即可。
-\`\`\`
+- 常用提示词统一放在 \`docs/ops/sop问题记录/SOP问题记录提示词.md\`，这里不再重复维护第二份。
+- 如果你发给 Codex 的是“本地图片路径”，优先先归档到 \`docs/ops/sop问题记录/screenshots/\` 再写记录。
+- 记录时推荐同时写 \`--screenshots\` 和 \`--image-notes\`，这样 Markdown 预览时能直接看到图片，也能看到每张图说明了什么。
+- \`--screenshots\` 推荐格式：\`截图说明::截图路径\`。
 
 ## 问题记录
 `;
 }
 
-function buildEntry(input: SopTestIssueEntryInput): string {
+function buildEntry(input: SopTestIssueEntryInput, screenshotLinks: ScreenshotLink[]): string {
   const timestamp = formatShanghaiNow();
   const category = input.category?.trim() || "测试异常";
   const expected = normalizeMultiline(input.expected, "命令执行成功，结果符合预期。");
@@ -197,6 +218,7 @@ function buildEntry(input: SopTestIssueEntryInput): string {
   const stdout = truncateText(input.stdout, 80, 4000);
   const stderr = truncateText(input.stderr, 80, 4000);
   const note = truncateText(input.note, 40, 2000);
+  const imageNotes = normalizeEvidenceNotes(input.imageNotes);
   const resultSummary = [
     input.exitCode === null || input.exitCode === undefined ? null : `exit_code=${input.exitCode}`,
     input.signal ? `signal=${input.signal}` : null,
@@ -229,6 +251,26 @@ function buildEntry(input: SopTestIssueEntryInput): string {
 
   if (note) {
     lines.push(`- 补充说明：${note}`);
+  }
+
+  if (imageNotes.length > 0) {
+    lines.push("");
+    lines.push("- 图片说明：");
+    for (const [index, imageNote] of imageNotes.entries()) {
+      lines.push(`  - ${buildImageNoteLabel(index, screenshotLinks)}：${imageNote}`);
+    }
+  }
+
+  if (screenshotLinks.length > 0) {
+    lines.push("");
+    lines.push("- 现场截图：");
+    for (const screenshot of screenshotLinks) {
+      lines.push(`  - ${screenshot.label}：\`${screenshot.markdownPath}\``);
+    }
+    lines.push("");
+    for (const screenshot of screenshotLinks) {
+      lines.push(`![${screenshot.label}](${screenshot.markdownPath})`);
+    }
   }
 
   if (stdout) {
@@ -277,7 +319,8 @@ export function appendSopTestIssue(
   const baseDir = options.baseDir ?? process.cwd();
   const logFile = resolveSopLogFile(options.logFile, baseDir);
   const current = existsSync(logFile) ? readFileSync(logFile, "utf8") : buildInitialDocument();
-  const entry = buildEntry(input);
+  const screenshotLinks = resolveScreenshotLinks(input.screenshots, logFile, baseDir);
+  const entry = buildEntry(input, screenshotLinks);
   const updated = insertEntry(current, entry);
 
   mkdirSync(path.dirname(logFile), { recursive: true });

@@ -13,6 +13,28 @@ function parseTags(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function parseScreenshots(raw: string | undefined): string[] {
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(/[,\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseImageNotes(raw: string | undefined): string[] {
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(/[|\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
@@ -27,6 +49,8 @@ async function main(): Promise<void> {
       tags: { type: "string" },
       stdout: { type: "string" },
       stderr: { type: "string" },
+      screenshots: { type: "string" },
+      "image-notes": { type: "string" },
       note: { type: "string" },
       cwd: { type: "string", default: process.cwd() },
       "log-file": { type: "string" },
@@ -53,6 +77,8 @@ async function main(): Promise<void> {
       tags: parseTags(values.tags),
       stdout: values.stdout,
       stderr: values.stderr,
+      screenshots: parseScreenshots(values.screenshots),
+      imageNotes: parseImageNotes(values["image-notes"]),
       note: values.note,
     },
     {

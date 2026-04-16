@@ -22,6 +22,28 @@ function parseTags(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function parseScreenshots(raw: string | undefined): string[] {
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(/[,\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseImageNotes(raw: string | undefined): string[] {
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(/[|\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function buildAutoActual(
   exitCode: number | null,
   signal: NodeJS.Signals | null,
@@ -96,6 +118,8 @@ async function main(): Promise<void> {
       "next-action": { type: "string", default: "检查错误输出，定位失败根因并继续修复。" },
       owner: { type: "string", default: "待分配" },
       tags: { type: "string" },
+      screenshots: { type: "string" },
+      "image-notes": { type: "string" },
       note: { type: "string" },
       cwd: { type: "string", default: process.cwd() },
       shell: { type: "string", default: process.env.SHELL || "/bin/sh" },
@@ -129,6 +153,8 @@ async function main(): Promise<void> {
         nextAction: values["next-action"],
         owner: values.owner,
         tags: parseTags(values.tags),
+        screenshots: parseScreenshots(values.screenshots),
+        imageNotes: parseImageNotes(values["image-notes"]),
         stdout: result.stdout,
         stderr: result.errorMessage ? `${result.stderr}\n${result.errorMessage}`.trim() : result.stderr,
         note: values.note,
