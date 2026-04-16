@@ -168,7 +168,7 @@
 - 备注：
   - 设计方向继续保持“简洁提醒、点击看详情”，不把企微卡片做成长报表
 
-## [todo][B-007] task 后台状态通知热修回写到仓库与部署链路
+## [done][B-007] task 后台状态通知热修回写到仓库与部署链路
 
 - 类型：risk
 - 价值：避免服务器 `task/model.php` 热修长期游离在仓库外，降低后续升级、迁移、重建环境时的丢失风险
@@ -180,12 +180,14 @@
   - 明确哪些状态动作已补齐：`activate / start|restart / pause / cancel / close / finish / assign`
   - 后续重建环境时不需要重新人工比对服务器文件
 - 相关位置：
-  - `scripts/callbacks/zentao_webhook_server.ts`
+  - `references/server-hotfixes/task-model-2026-04-16.php`
+  - `docs/overview/task后台通知热修回写说明.md`
   - `docs/overview/后台变更通知覆盖清单.md`
   - `docs/overview/通知链路记录.md`
   - `tmp/server-hotfixes/task-model.php`
 - 备注：
-  - 这项优先解决“热修已生效但仓库不可追踪”的治理问题
+  - 2026-04-16 已把服务器热修副本纳管到 `references/server-hotfixes/task-model-2026-04-16.php`
+  - 已补 `docs/overview/task后台通知热修回写说明.md`，明确“重启不会自动丢、升级/覆盖会丢”和最小重放步骤
 
 ## [todo][B-008] task doing / activate / restart 等状态规则补齐
 
