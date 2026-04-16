@@ -80,6 +80,47 @@ const OPEN_QUESTION_HINTS = [
   "解释",
   "介绍",
 ];
+const BUSINESS_ACTION_HINTS = [
+  "查",
+  "查询",
+  "查看",
+  "看",
+  "创建",
+  "新建",
+  "建立",
+  "建",
+  "提",
+  "报",
+  "指派",
+  "分配",
+  "更新",
+  "修改",
+  "关闭",
+  "开始",
+  "完成",
+  "上线",
+  "提测",
+  "验收",
+];
+const STRUCTURED_BUSINESS_HINTS = [
+  "叫",
+  "命名",
+  "模块",
+  "负责人",
+  "指派给",
+  "产品负责人",
+  "测试负责人",
+  "研发负责人",
+  "优先级",
+  "所属",
+  "描述",
+  "标题",
+  "内容",
+  "顺手",
+  "同时",
+  "并且",
+  "都给",
+];
 
 function firstNonEmptyString(...values: Array<string | undefined | null>): string | undefined {
   for (const value of values) {
@@ -100,9 +141,82 @@ function normalizeClassifierText(text: string): string {
     .trim();
 }
 
+function countMatchedHints(text: string, hints: string[]): number {
+  return hints.reduce((count, hint) => count + (text.includes(hint) ? 1 : 0), 0);
+}
+
+function hasStructuredBusinessSignals(text: string): boolean {
+  const normalized = normalizeClassifierText(text);
+  if (!normalized) {
+    return false;
+  }
+
+  const actionHits = countMatchedHints(normalized, BUSINESS_ACTION_HINTS);
+  const keywordHits = countMatchedHints(normalized, ZENTAO_BUSINESS_KEYWORDS);
+  const structuredHits = countMatchedHints(normalized, STRUCTURED_BUSINESS_HINTS);
+  const hasEntityId = /(?:产品|项目|迭代|执行|需求|任务|bug|缺陷|发布|测试单)\s*[#：:,-]?\s*\d+/iu.test(normalized);
+  const hasInlineList = /[、,，]/u.test(normalized);
+  const hasLongInstruction = normalized.length >= 14;
+
+  if (keywordHits >= 2 && actionHits >= 1) {
+    return true;
+  }
+
+  if (structuredHits >= 2 && actionHits >= 1) {
+    return true;
+  }
+
+  if (hasEntityId && actionHits >= 1) {
+    return true;
+  }
+
+  if (hasLongInstruction && actionHits >= 1 && (keywordHits >= 1 || structuredHits >= 1 || hasInlineList)) {
+    return true;
+  }
+
+  return false;
+}
+
+function buildBusinessSignalSummary(text: string): string[] {
+  const normalized = normalizeClassifierText(text);
+  if (!normalized) {
+    return [];
+  }
+
+  const signals: string[] = [];
+  const matchedKeywords = ZENTAO_BUSINESS_KEYWORDS.filter((keyword) => normalized.includes(keyword));
+  const matchedActions = BUSINESS_ACTION_HINTS.filter((keyword) => normalized.includes(keyword));
+  const matchedStructured = STRUCTURED_BUSINESS_HINTS.filter((keyword) => normalized.includes(keyword));
+
+  if (matchedKeywords.length > 0) {
+    signals.push(`业务对象词: ${matchedKeywords.join(", ")}`);
+  }
+  if (matchedActions.length > 0) {
+    signals.push(`动作词: ${matchedActions.join(", ")}`);
+  }
+  if (matchedStructured.length > 0) {
+    signals.push(`结构化字段词: ${matchedStructured.join(", ")}`);
+  }
+  if (/(?:产品|项目|迭代|执行|需求|任务|bug|缺陷|发布|测试单)\s*[#：:,-]?\s*\d+/iu.test(normalized)) {
+    signals.push("包含业务对象编号");
+  }
+  if (/[、,，]/u.test(normalized)) {
+    signals.push("包含列表型参数");
+  }
+  if (normalized.length >= 14) {
+    signals.push("属于较长业务描述");
+  }
+
+  return signals;
+}
+
 function isObviousNonZentao(text: string): boolean {
   const normalized = normalizeClassifierText(text);
   if (!normalized) {
+    return false;
+  }
+
+  if (hasStructuredBusinessSignals(normalized)) {
     return false;
   }
 
@@ -120,6 +234,10 @@ function isObviousNonZentao(text: string): boolean {
 function isLikelyMeaninglessShortInput(text: string): boolean {
   const normalized = normalizeClassifierText(text);
   if (!normalized || normalized.length > 12) {
+    return false;
+  }
+
+  if (hasStructuredBusinessSignals(normalized)) {
     return false;
   }
 
@@ -216,6 +334,7 @@ function buildRouteCatalog(routes: IntentRouteLite[]): string {
 }
 
 function buildClassifierMessages(text: string, userid: string, routes: IntentRouteLite[]): { system: string; user: string } {
+  const signalSummary = buildBusinessSignalSummary(text);
   const system = [
     loadAgentPrompt(),
     "",
@@ -225,12 +344,19 @@ function buildClassifierMessages(text: string, userid: string, routes: IntentRou
     "如果是禅道请求，只能从候选 intent 里选择 intent。",
     "尽量抽取 args，值统一输出字符串。",
     "如果参数不足，填入 missing_args。",
+    "判断优先级规则：",
+    "1. 短寒暄、帮助、介绍、无业务对象的闲聊，判为非禅道。",
+    "2. 只要输入是围绕产品、项目、迭代、需求、任务、Bug、发布、测试等对象的操作指令、查询指令、创建指令、状态指令，即使语气口语化，也优先判为禅道。",
+    "3. 如果一句话里同时出现对象名、模块名、负责人、列表项、编号、标题、描述、指派等结构化字段，应明显偏向禅道请求。",
+    "4. 长自然语言业务描述不要因为出现“帮我、看下、能不能、顺手、都给”这类口语词就误判为闲聊。",
     "短语理解规则：",
     "1. 迭代、执行、sprint 默认映射到 execution。",
     "2. 测试准出、能不能提测、能否准出，优先映射到 query-test-exit-readiness。",
     "3. 上线检查、发布前检查，优先映射到 query-go-live-checklist。",
     "4. 我的任务、我的 bug 这类‘我的’命令默认对应当前 userid。",
-    "5. 除非非常确定，不要把普通闲聊识别成禅道请求。",
+    "5. 除非非常确定，不要把普通闲聊识别成禅道请求；但对长业务句、结构化字段句、包含明确业务对象的口语指令，不要过度保守。",
+    "6. “帮我建一个产品，叫A，顺手把模块也建好：X、Y、Z，产品负责人、测试负责人、研发负责人都给张三” 这类输入，应识别为 create-product-with-modules。",
+    "7. “帮我看看 4 号迭代能不能提测”“这个版本现在可以上线吗” 这类口语业务句，若语义明确，应优先判为禅道请求。",
     "",
     "输出 JSON schema：",
     '{"is_zentao_request":true,"intent":"...","args":{"execution":"4"},"missing_args":[],"confidence":0.91,"reason":"..."}',
@@ -242,6 +368,7 @@ function buildClassifierMessages(text: string, userid: string, routes: IntentRou
   const user = [
     `当前企微 userid: ${userid}`,
     `用户原始输入: ${text}`,
+    signalSummary.length > 0 ? `输入中的业务信号:\n- ${signalSummary.join("\n- ")}` : "输入中的业务信号: 无明显业务信号",
     "请只返回 JSON。",
   ].join("\n");
 
