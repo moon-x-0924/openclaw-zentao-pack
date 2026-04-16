@@ -59,6 +59,10 @@ function normalizeText(text: string): string {
 
   normalized = normalized.replace(/报个\s*bug/gu, "报 bug");
   normalized = normalized.replace(/提个\s*bug/gu, "提 bug");
+  normalized = normalized.replace(/提个\s*需求/gu, "提需求");
+  normalized = normalized.replace(/提一个\s*需求/gu, "提需求");
+  normalized = normalized.replace(/建个\s*需求/gu, "创建需求");
+  normalized = normalized.replace(/建一个\s*需求/gu, "创建需求");
   normalized = normalized.replace(/建个任务/gu, "创建任务");
   normalized = normalized.replace(/建个产品/gu, "创建产品");
   normalized = normalized.replace(/建个模块/gu, "创建模块");

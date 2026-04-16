@@ -1,4 +1,5 @@
-import { extractRouteArgs, loadIntentRoutes } from "../callbacks/wecom_route_resolver";
+import { findContextualSemanticRoute } from "../callbacks/wecom_context_semantic_resolver";
+import { extractRouteArgs, findRouteMatch, loadIntentRoutes } from "../callbacks/wecom_route_resolver";
 import { printJson } from "../shared/zentao_client";
 
 function assert(condition: unknown, message: string): void {
@@ -9,10 +10,17 @@ function assert(condition: unknown, message: string): void {
 
 async function main(): Promise<void> {
   const text = "帮我在测试最小 SOP 流程产品下面提个需求，标题叫测试最小 SOP 流程-新增入口，需求描述是支持从首页进入最小 SOP 流程测试入口，验收标准是首页能进入测试入口并且主流程能正常走通，评审人先填鲜敏创建需求";
-  const route = loadIntentRoutes().find((item) => item.intent === "create-story");
+  const routes = loadIntentRoutes();
+  const route = routes.find((item) => item.intent === "create-story");
   if (!route) {
     throw new Error("create-story route not found");
   }
+
+  const semanticResolution = findContextualSemanticRoute(text, "LengLeng", routes);
+  assert(!semanticResolution, `unexpected semantic route: ${semanticResolution?.match.route.intent ?? "<empty>"}`);
+
+  const directMatch = findRouteMatch(text, routes);
+  assert(directMatch?.route.intent === "create-story", `unexpected direct intent: ${directMatch?.route.intent ?? "<empty>"}`);
 
   const args = extractRouteArgs(text, route, "LengLeng");
   assert(args.title === "测试最小 SOP 流程-新增入口", `unexpected title: ${args.title ?? "<empty>"}`);
@@ -22,7 +30,7 @@ async function main(): Promise<void> {
 
   printJson({
     ok: true,
-    checked: 4,
+    checked: 6,
     args,
   });
 }
