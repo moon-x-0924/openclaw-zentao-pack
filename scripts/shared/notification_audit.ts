@@ -24,7 +24,7 @@ const REPO_ROOT = resolveRepoRoot();
 const AUDIT_DIR = path.join(REPO_ROOT, "tmp/notification-audit");
 const AUDIT_JSONL_PATH = path.join(AUDIT_DIR, "notification-audit.jsonl");
 const AUDIT_LATEST_PATH = path.join(AUDIT_DIR, "notification-audit.latest.json");
-const AUDIT_DOC_PATH = path.join(REPO_ROOT, "docs/overview/通知链路记录.md");
+const AUDIT_DOC_PATH = path.join(AUDIT_DIR, "通知链路记录.md");
 
 export function writeNotificationAudit(record: NotificationAuditRecord): void {
   ensureAuditDir();
@@ -90,6 +90,7 @@ function writeNotificationAuditDoc(record: NotificationAuditRecord): void {
     "记录原则：",
     "- 只记录已经发生的通知执行结果。",
     "- 默认按倒序展示，最新记录在最前。",
+    "- 总览文件写入 `tmp/notification-audit/通知链路记录.md`，默认不纳入 Git。",
     "- 详细机器日志以 `tmp/notification-audit/notification-audit.jsonl` 为准。",
     "",
   ].join("\n");

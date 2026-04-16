@@ -8,14 +8,14 @@
 变更日志分层：
 - 服务器总变更日志：`/root/.openclaw/docs/服务器变更总日志.md`
 - 技能包变更日志：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/docs/overview/服务器变更日志.md`
-- 技能包通知链路记录：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/docs/overview/通知链路记录.md`
+- 技能包通知链路记录：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/tmp/notification-audit/通知链路记录.md`
 - 说明：页面上应同时展示这三份日志；总日志看全局环境，技能包日志看禅道包内部，通知链路记录看通知执行事实
 
 通知链路快速入口：
 - 规则：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/docs/wecom-zentao/11-notification-rules-mvp.yaml`
 - 模板：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/docs/wecom-zentao/12-notification-templates-mvp.yaml`
 - 接收人解析：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/docs/wecom-zentao/13-receiver-resolution-spec.md`
-- 总览记录：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/docs/overview/通知链路记录.md`
+- 总览记录：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/tmp/notification-audit/通知链路记录.md`
 - 明细日志：`/root/.openclaw/workspace/skills/openclaw-zentao-pack/tmp/notification-audit/notification-audit.jsonl`
 - 查询命令：`npm run query-notification-audit -- --latest 20`
 

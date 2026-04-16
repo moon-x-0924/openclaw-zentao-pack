@@ -42,7 +42,7 @@
 
 通知日志查看入口：
 
-- 总览文档：`docs/overview/通知链路记录.md`
+- 总览文档：`tmp/notification-audit/通知链路记录.md`
 - 明细日志：`tmp/notification-audit/notification-audit.jsonl`
 - 查询脚本：`npm run query-notification-audit -- --latest 20`
 
@@ -56,7 +56,7 @@
 
 #### 2. 通知执行结果在哪里看
 
-- 面向人看的总览：`docs/overview/通知链路记录.md`
+- 面向人看的总览：`tmp/notification-audit/通知链路记录.md`
 - 面向程序的明细：`tmp/notification-audit/notification-audit.jsonl`
 - 最近快照：`tmp/notification-audit/notification-audit.latest.json`
 
@@ -85,7 +85,7 @@ npm run query-notification-audit -- --latest 5
 - `notification.rule_code`
 - `notification.sent_to`
 - `notification.skipped_reason`
-- `docs/overview/通知链路记录.md`
+- `tmp/notification-audit/通知链路记录.md`
 
 #### 6. 目前最常见阻塞点
 
