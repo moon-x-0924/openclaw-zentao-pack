@@ -25,6 +25,7 @@ import { queryMyBugsTemplate } from "./templates/query-my-bugs";
 import { queryMyStoriesTemplate } from "./templates/query-my-stories";
 import { queryMyTasksTemplate } from "./templates/query-my-tasks";
 import { queryProductModulesTemplate } from "./templates/query-product-modules";
+import { queryProductOverviewTemplate } from "./templates/query-product-overview";
 import { queryProductStoriesTemplate } from "./templates/query-product-stories";
 import { queryProductsTemplate } from "./templates/query-products";
 import { queryProjectTeamTemplate } from "./templates/query-project-team";
@@ -71,6 +72,7 @@ const TEMPLATE_REGISTRY: Record<string, ReplyTemplate> = {
   "query-my-stories": queryMyStoriesTemplate,
   "query-my-tasks": queryMyTasksTemplate,
   "query-product-modules": queryProductModulesTemplate,
+  "query-product-overview": queryProductOverviewTemplate,
   "query-product-stories": queryProductStoriesTemplate,
   "query-products": queryProductsTemplate,
   "query-project-team": queryProjectTeamTemplate,

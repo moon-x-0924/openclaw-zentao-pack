@@ -458,6 +458,39 @@ export const routeAgentTemplates: Record<string, ReplyTemplate> = {
       { label: "负责人", path: "owner", hideIfMissing: true },
     ]),
   }),
+  "query-product-overview": createAgentDetailTemplate({
+    name: "query-product-overview",
+    title: (c) => "产品概览 " + getText(getPathValue(c.result, "overview.name"), "#" + getText(getPathValue(c.result, "product"), "-")),
+    sections: [
+      {
+        label: "基本信息",
+        formatter: (c) => formatFieldSummary(getPathValue(c.result, "overview"), [
+          { label: "ID", path: "id" },
+          { label: "状态", path: "status" },
+          { label: "PO", path: "PO", hideIfMissing: true },
+          { label: "QD", path: "QD", hideIfMissing: true },
+          { label: "RD", path: "RD", hideIfMissing: true },
+        ]),
+      },
+      {
+        label: "需求概览",
+        formatter: (c) => formatFieldSummary(getPathValue(c.result, "overview"), [
+          { label: "总需求", path: "totalStories" },
+          { label: "激活中", path: "activeStories" },
+          { label: "评审中", path: "reviewingStories" },
+        ]),
+      },
+      {
+        label: "缺陷与发布",
+        formatter: (c) => formatFieldSummary(getPathValue(c.result, "overview"), [
+          { label: "Bug总数", path: "totalBugs" },
+          { label: "未解决Bug", path: "unresolvedBugs" },
+          { label: "发布数", path: "releases" },
+        ]),
+      },
+    ],
+    quoteText: () => "可继续发送“这个产品下面的模块”或“这个产品里有哪些需求”继续查看。",
+  }),
   "query-product-stories": createAgentListTemplate({
     name: "query-product-stories",
     cardType: "button_interaction",

@@ -29,6 +29,12 @@ routes:
     script: query-products
     reply_template: query-products
 
+  - intent: query-product-overview
+    triggers: ["产品概览", "产品详情"]
+    script: query-product-overview
+    reply_template: query-product-overview
+    required_args: [product]
+
   - intent: query-product-modules
     triggers: ["查模块", "产品模块", "看模块", "模块列表"]
     script: query-product-modules
