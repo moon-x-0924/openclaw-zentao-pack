@@ -244,3 +244,26 @@
   - `/opt/zbox/app/zentao/module/task/view/assignto.html.php`
 - 备注：
   - 这项主要是为了让后续“转派通知”验证更稳，不是为了重做页面逻辑
+
+## [todo][B-011] 企微路由动作裁决层与分流可观测性
+
+- 类型：routing
+- 价值：把“创建需求被误分流成需求列表”这类问题从单点补丁升级成统一机制，减少后续在 `story / task / bug / testtask` 上重复踩坑
+- 风险：中
+- 触发信号：本轮企微自然语言创建需求场景中，前置语义路由先命中 `query-product-stories`，导致 LLM 没有介入机会；现有修复已用口语归一化和创建动作让路止血，但后续仍需要统一优化
+- 最小动作：先抽出一层轻量动作裁决，至少区分“创建 / 查询列表 / 详情 / 状态更新”四类，再补最基础的分流日志，并用真实企微口语样本回归 `story / task / bug / testtask`
+- 验收标准：
+  - 新增一层可回读的动作分类或裁决逻辑，而不是继续把判断散落在单个 `query-*` / `create-*` 分支里
+  - 至少 `story / task / bug / testtask` 四类对象接入同一套基础动作裁决
+  - 分流日志能看出原始文本、命中规则、是否走语义路由、是否调用 LLM、最终 intent 与简要原因
+  - 至少补 10 条真实口语回归样本，覆盖创建、查询、详情、状态更新、歧义句
+  - 明显创建指令不再被列表查询抢占
+- 相关位置：
+  - `scripts/callbacks/wecom_callback.ts`
+  - `scripts/callbacks/wecom_context_semantic_resolver.ts`
+  - `scripts/callbacks/wecom_route_resolver.ts`
+  - `agents/modules/intent-routing.yaml`
+  - `scripts/tests/`
+- 备注：
+  - 第一轮目标不是重写整套路由，而是先做轻量动作裁决、基础打分思路和可观测性
+  - 可优先复用交接包 `2026-04-16-企微创建需求误分流修复.md` 中的 backlog 候选与下一步设计
